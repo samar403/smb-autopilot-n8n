@@ -1,0 +1,19 @@
+{
+  "name": "smb-autopilot-pack",
+  "version": "1.0.0",
+  "description": "Ready-made n8n workflows for small businesses: invoice follow-ups, lead auto-replies, payment reminders, failed-payment recovery.",
+  "type": "module",
+  "private": true,
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "catalog": "node tools/fetch-catalog.mjs 1.80.0 1.100.0 1.123.85 2.43.8",
+    "build": "node tools/build.mjs",
+    "validate": "node tools/validate.mjs",
+    "test": "node --test test/*.test.mjs",
+    "check": "node tools/build.mjs && node tools/validate.mjs && node --test test/*.test.mjs",
+    "test:runtime": "node test/runtime/run.mjs"
+  }
+}

@@ -1,0 +1,5 @@
+invoice_id,client_name,client_email,client_phone,amount,currency,issue_date,due_date,status,payment_link,reminder_stage,last_reminder_at,pre_due_reminders,notes
+INV-1001,Dana Smith,dana@example.com,+15550101111,1250,USD,2026-10-01,2026-10-15,Unpaid,https://buy.stripe.com/test_example,0,,,Bathroom refit deposit
+INV-1002,Raj Patel,raj@example.com,,640,USD,2026-10-10,2026-10-24,Sent,,0,,,Water heater service
+INV-1003,Lee Chen,lee@example.com,+15550107788,480,USD,2026-10-20,2026-11-03,Sent,,0,,,
+INV-1004,Paid Example,paid@example.com,,90,USD,2026-09-01,2026-09-15,Paid,,1,2026-09-18,3,Paid by bank transfer

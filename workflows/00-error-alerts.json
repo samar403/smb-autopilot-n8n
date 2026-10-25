@@ -1,0 +1,133 @@
+{
+  "name": "SMB Autopilot · Error alerts",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Error alerts\nEmails you in plain English whenever another SMB Autopilot workflow fails, with a link to the failed run.\n\n**Setup (3 min)**\n1. Set **owner_email** in Config and connect Gmail.\n2. Save this workflow (it does not need to be activated).\n3. In each other workflow: **Settings → Error workflow → SMB Autopilot · Error alerts**.",
+        "width": 400,
+        "height": 300,
+        "color": 4
+      },
+      "id": "f2033468-c7a4-4261-a71f-015aea1b8fbe",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -460,
+        120
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "11a268a3-6701-430a-a706-c38b1373e480",
+      "name": "When a workflow fails",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "0cf6fdef-abdd-40c1-a4d0-d945930d1570",
+              "name": "owner_email",
+              "value": "you@example.com",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "13e3e1f4-9a78-447f-ae5d-92206d1bfd9f",
+      "name": "Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Formats n8n's error-trigger payload into a plain-English alert.\n// Execution errors carry `execution`; errors in a trigger itself carry `trigger`.\n// ---- text + email layout (shared helper, inlined at build time) ----\nfunction escapeHtml(s) {\n  return String(s ?? '').replace(/[&<>\"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '\"': '&quot;', \"'\": '&#39;' })[c]);\n}\n\n/** Replace {placeholders}; unknown placeholders are left visible so typos get noticed. */\nfunction fill(template, vars) {\n  return String(template ?? '').replace(/\\{(\\w+)\\}/g, (match, key) => (key in vars ? String(vars[key] ?? '') : match));\n}\n\nfunction isEmail(s) {\n  return /^[^\\s@<>(),;:]+@[^\\s@<>(),;:]+\\.[a-z]{2,}$/i.test(String(s ?? '').trim());\n}\n\nfunction firstName(fullName) {\n  const first = String(fullName ?? '').trim().split(/\\s+/)[0] || '';\n  return first ? first.charAt(0).toUpperCase() + first.slice(1) : '';\n}\n\n/** \"1,250.00\", \"$1250\", 1250 -> 1250. Returns null when no number is present. */\nfunction toAmount(value) {\n  if (typeof value === 'number') return value;\n  const cleaned = String(value ?? '').replace(/[^0-9.-]/g, '');\n  if (!cleaned || isNaN(Number(cleaned))) return null;\n  return Number(cleaned);\n}\n\nfunction money(amount, currency, locale) {\n  if (amount === null || amount === undefined) return '';\n  try {\n    return new Intl.NumberFormat(locale || 'en-US', { style: 'currency', currency: (currency || 'USD').toUpperCase() }).format(amount);\n  } catch {\n    return `${currency || ''} ${Number(amount).toFixed(2)}`.trim();\n  }\n}\n\n/** Plain text with blank-line paragraphs -> simple HTML paragraphs. */\nfunction textToHtml(text) {\n  return String(text ?? '')\n    .trim()\n    .split(/\\n\\s*\\n/)\n    .map((p) => `<p style=\"margin:0 0 14px\">${escapeHtml(p.trim()).replace(/\\n/g, '<br>')}</p>`)\n    .join('\\n');\n}\n\n/** Minimal, client-safe HTML email: paragraphs, optional button, small footer. */\nfunction emailHtml({ bodyText, buttonLabel, buttonUrl, footer }) {\n  const button = buttonUrl\n    ? `<p style=\"margin:22px 0\"><a href=\"${escapeHtml(buttonUrl)}\" style=\"background:#1f6feb;color:#ffffff;text-decoration:none;padding:11px 20px;border-radius:6px;display:inline-block;font-weight:600\">${escapeHtml(buttonLabel || 'Open link')}</a></p>`\n    : '';\n  const foot = footer ? `<p style=\"margin:24px 0 0;color:#6b7280;font-size:12px\">${escapeHtml(footer)}</p>` : '';\n  return `<div style=\"font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.55;color:#111827;max-width:560px\">\\n${textToHtml(bodyText)}\\n${button}${foot}\\n</div>`;\n}\n\n/** Owner-facing HTML table. rows: array of arrays of cell text. */\nfunction htmlTable(headers, rows) {\n  const th = headers.map((h) => `<th style=\"text-align:left;padding:6px 10px;border-bottom:1px solid #d1d5db;font-size:13px\">${escapeHtml(h)}</th>`).join('');\n  const body = rows\n    .map((r) => `<tr>${r.map((c) => `<td style=\"padding:6px 10px;border-bottom:1px solid #eef0f3;font-size:13px\">${escapeHtml(c)}</td>`).join('')}</tr>`)\n    .join('\\n');\n  return `<table style=\"border-collapse:collapse;margin:8px 0 18px\">\\n<tr>${th}</tr>\\n${body}\\n</table>`;\n}\nconst cfg = $('Config').first().json;\nreturn $('When a workflow fails').all().map((item) => {\n  const d = item.json;\n  const workflowName = d.workflow?.name || 'An SMB Autopilot workflow';\n  const exec = d.execution ?? {};\n  const err = exec.error ?? d.trigger?.error ?? {};\n  const node = exec.lastNodeExecuted || err.node?.name || (d.trigger ? 'its trigger' : 'an unknown step');\n  const message = err.message || err.description || 'No error message was recorded.';\n  const hint = /credential|auth|401|403|token|expired|invalid_grant/i.test(message)\n    ? 'This usually means a connected account (Google, Stripe, Twilio, Anthropic) needs to be reconnected in n8n Credentials.'\n    : /429|rate limit/i.test(message)\n      ? 'A service rate-limited the request. It normally clears on the next run.'\n      : /ENOTFOUND|ECONNRESET|ETIMEDOUT|timeout|503|502/i.test(message)\n        ? 'A service was temporarily unreachable. It normally clears on the next run.'\n        : 'Open the execution to see the exact step and data that failed.';\n\n  return {\n    json: {\n      to: cfg.owner_email,\n      subject: `Automation problem: \"${workflowName}\" stopped at ${node}`,\n      html: `<div style=\"font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:14px;color:#111827\">\n<p><b>${escapeHtml(workflowName)}</b> failed at <b>${escapeHtml(node)}</b>.</p>\n<p style=\"background:#f3f4f6;padding:10px;border-radius:6px;font-family:Consolas,monospace;font-size:13px\">${escapeHtml(message)}</p>\n<p>${escapeHtml(hint)}</p>\n${exec.url ? `<p><a href=\"${escapeHtml(exec.url)}\">Open the failed execution</a></p>` : ''}\n<p style=\"color:#6b7280;font-size:12px\">Mode: ${escapeHtml(exec.mode || (d.trigger ? 'trigger' : 'unknown'))}${exec.id ? ' · Execution ' + escapeHtml(exec.id) : ''}</p>\n</div>`,\n    },\n  };\n});\n"
+      },
+      "id": "6b5a9852-31f7-4344-a324-56eb17546318",
+      "name": "Format alert",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.to }}",
+        "subject": "={{ $json.subject }}",
+        "emailType": "html",
+        "message": "={{ $json.html }}",
+        "options": {
+          "appendAttribution": false,
+          "senderName": "SMB Autopilot"
+        }
+      },
+      "id": "0f6c07bc-51cd-4271-a873-7a5a88c87150",
+      "name": "Email the owner",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        660,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "When a workflow fails": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config": {
+      "main": [
+        [
+          {
+            "node": "Format alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format alert": {
+      "main": [
+        [
+          {
+            "node": "Email the owner",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "description": "Plain-English email alert when any SMB Autopilot workflow fails."
+  },
+  "active": false
+}

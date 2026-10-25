@@ -1,0 +1,537 @@
+{
+  "name": "SMB Autopilot · Invoice follow-ups",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Invoice follow-ups\nChases overdue invoices from a Google Sheet with a polite 3-step sequence, then emails you a daily summary.\n\n**Setup (10 min)**\n1. Copy the Invoices sheet template and paste its URL into **Config → sheet_url**.\n2. Fill in the rest of **Config** (business name, your email, wording).\n3. Connect Google Sheets + Gmail credentials.\n4. Run once with **test_mode = true**: every email comes to you.\n5. Set **test_mode = false** and activate.\n\nMark an invoice **Paid** in the sheet and the reminders stop.",
+        "width": 400,
+        "height": 420,
+        "color": 4
+      },
+      "id": "b048ed26-8a38-499f-afcf-635c53ffc271",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -460,
+        120
+      ]
+    },
+    {
+      "parameters": {
+        "content": "### Edit only this node\nAll settings and email wording live here. Placeholders: {first_name} {client_name} {invoice_id} {amount} {due_date} {days_overdue} {business_name} {sender_name} {payment_instructions}",
+        "width": 260,
+        "height": 200,
+        "color": 6
+      },
+      "id": "1dab85fc-3c45-4a88-ac73-08a9dddeb6e6",
+      "name": "Sticky Note2",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        140,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 9 * * 1-5"
+            }
+          ]
+        }
+      },
+      "id": "8271b23c-c557-4b4e-af4c-3a8aa0458a66",
+      "name": "Every weekday at 9am",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        340
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "74b031d9-5fb3-40e5-a987-8f171a646c04",
+              "name": "business_name",
+              "value": "Acme Plumbing",
+              "type": "string"
+            },
+            {
+              "id": "ef0a43f1-2088-4c56-a987-1c8a4243096e",
+              "name": "sender_name",
+              "value": "Jordan at Acme Plumbing",
+              "type": "string"
+            },
+            {
+              "id": "5ed73d9c-0170-4ae5-a3f6-fca69aaf9dfd",
+              "name": "owner_email",
+              "value": "you@example.com",
+              "type": "string"
+            },
+            {
+              "id": "a75aa995-9d08-48d9-aa0b-f291dcc114c8",
+              "name": "sheet_url",
+              "value": "https://docs.google.com/spreadsheets/d/PASTE_YOUR_SHEET_ID/edit",
+              "type": "string"
+            },
+            {
+              "id": "c3872ad2-25d7-4fda-af5a-4f463fca2adb",
+              "name": "invoices_tab",
+              "value": "Invoices",
+              "type": "string"
+            },
+            {
+              "id": "5a8d7a24-a129-4f6e-a941-4ef1731a41e2",
+              "name": "test_mode",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "5bbffbb8-f35f-487b-a0aa-b8fa74acd7fb",
+              "name": "locale",
+              "value": "en-US",
+              "type": "string"
+            },
+            {
+              "id": "aef941e6-ebde-44ee-a306-f24ac91e5991",
+              "name": "default_currency",
+              "value": "USD",
+              "type": "string"
+            },
+            {
+              "id": "8de22b2c-a215-45f3-a4b6-618f9167714a",
+              "name": "date_format",
+              "value": "MM/DD/YYYY",
+              "type": "string"
+            },
+            {
+              "id": "9d53c1dc-3f0c-4a88-afb6-9bb6c1ef68f3",
+              "name": "min_days_between_reminders",
+              "value": 5,
+              "type": "number"
+            },
+            {
+              "id": "500cbadf-c0a1-468d-a5c5-751db42468a5",
+              "name": "payment_instructions",
+              "value": "You can pay online with the button below, or by bank transfer quoting the invoice number.",
+              "type": "string"
+            },
+            {
+              "id": "25c837dd-20ae-4a29-a784-419486ea38e3",
+              "name": "stage1_after_days",
+              "value": 3,
+              "type": "number"
+            },
+            {
+              "id": "00676e8e-b7db-4440-a7e0-710314ea9a36",
+              "name": "stage1_subject",
+              "value": "Friendly reminder: invoice {invoice_id} ({amount})",
+              "type": "string"
+            },
+            {
+              "id": "e9499d63-fb31-490c-a0af-bf0f1ee7e81e",
+              "name": "stage1_body",
+              "value": "Hi {first_name},\n\nHope all is well. A quick reminder that invoice {invoice_id} for {amount} was due on {due_date}. If it is already on its way, thank you, and please ignore this note.\n\n{payment_instructions}\n\nThanks,\n{sender_name}",
+              "type": "string"
+            },
+            {
+              "id": "c59d16e5-c1ac-43bd-ac56-0f93f1cd0308",
+              "name": "stage2_after_days",
+              "value": 10,
+              "type": "number"
+            },
+            {
+              "id": "ad5b0b28-3642-49c4-a5d4-5ab61158aaca",
+              "name": "stage2_subject",
+              "value": "Following up: invoice {invoice_id} is {days_overdue} days overdue",
+              "type": "string"
+            },
+            {
+              "id": "7c1c3777-0a32-4d64-ac1d-6c2491179ac9",
+              "name": "stage2_body",
+              "value": "Hi {first_name},\n\nI am following up on invoice {invoice_id} for {amount}, which was due on {due_date} and is now {days_overdue} days overdue. Could you let me know when we can expect payment? If anything about the invoice looks wrong, just reply and I will sort it out.\n\n{payment_instructions}\n\nThank you,\n{sender_name}",
+              "type": "string"
+            },
+            {
+              "id": "94303a3a-2393-4ca3-ac94-d6004bbcf252",
+              "name": "stage3_after_days",
+              "value": 21,
+              "type": "number"
+            },
+            {
+              "id": "355df20d-6aaa-4442-a743-2495b68e699a",
+              "name": "stage3_subject",
+              "value": "Final reminder: invoice {invoice_id} ({amount})",
+              "type": "string"
+            },
+            {
+              "id": "0141214f-64e8-46e8-a87d-0f38431949d4",
+              "name": "stage3_body",
+              "value": "Hi {first_name},\n\nInvoice {invoice_id} for {amount} is now {days_overdue} days overdue. This is our last automated reminder. Please arrange payment this week, or reply with a date that works for you, and {business_name} will follow up personally.\n\n{payment_instructions}\n\nRegards,\n{sender_name}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "c767e807-e798-40cc-a8a5-a19a5e09c7f3",
+      "name": "Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        340
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "mode": "url",
+          "value": "={{ $('Config').first().json.sheet_url }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "={{ $('Config').first().json.invoices_tab }}"
+        },
+        "options": {
+          "outputFormatting": {
+            "values": {
+              "general": "UNFORMATTED_VALUE",
+              "date": "SERIAL_NUMBER"
+            }
+          }
+        }
+      },
+      "id": "b11038ce-1152-4d03-a689-d65c29c86ff9",
+      "name": "Read invoices",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        440,
+        340
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Decides which overdue invoices get their next follow-up today.\n// Sequence: stage 1 (friendly) -> stage 2 (firm) -> stage 3 (final), never\n// skipping a stage, and never closer together than min_days_between_reminders.\n// Edit the wording in the \"Config\" node, not here.\n// ---- dates (shared helper, inlined at build time) ----\n// Sheet dates arrive as serial numbers (date cells read as SERIAL_NUMBER), ISO\n// text (\"2026-10-31\"), or day/month text whose order depends on DATE_FORMAT.\nfunction isoFromParts(y, m, d) {\n  const dt = new Date(Date.UTC(y, m - 1, d));\n  if (dt.getUTCFullYear() !== y || dt.getUTCMonth() !== m - 1 || dt.getUTCDate() !== d) return null;\n  return dt.toISOString().slice(0, 10);\n}\n\nfunction toIsoDate(value, dateFormat) {\n  if (value === null || value === undefined) return null;\n  const s = String(value).trim();\n  if (!s) return null;\n  if (/^\\d+(\\.\\d+)?$/.test(s)) {\n    const serial = Number(s);\n    if (serial < 20000 || serial > 80000) return null; // not a plausible 1954-2119 date\n    return new Date(Date.UTC(1899, 11, 30) + Math.floor(serial) * 86400000).toISOString().slice(0, 10);\n  }\n  let m = s.match(/^(\\d{4})-(\\d{1,2})-(\\d{1,2})(?:[T ].*)?$/);\n  if (m) return isoFromParts(+m[1], +m[2], +m[3]);\n  m = s.match(/^(\\d{1,2})[/.-](\\d{1,2})[/.-](\\d{4})$/);\n  if (m) {\n    const [a, b, y] = [+m[1], +m[2], +m[3]];\n    return String(dateFormat).toUpperCase().startsWith('MM') ? isoFromParts(y, a, b) : isoFromParts(y, b, a);\n  }\n  const parsed = new Date(s); // \"Oct 31, 2026\", \"31 October 2026\"\n  if (!isNaN(parsed)) return isoFromParts(parsed.getFullYear(), parsed.getMonth() + 1, parsed.getDate());\n  return null;\n}\n\n/** Whole days from `fromIso` to `toIso` (positive when toIso is later). */\nfunction daysBetween(fromIso, toIso) {\n  const [a, b] = [fromIso, toIso].map((iso) => {\n    const [y, m, d] = iso.split('-').map(Number);\n    return Date.UTC(y, m - 1, d);\n  });\n  return Math.round((b - a) / 86400000);\n}\n\nfunction displayDate(iso, locale) {\n  const [y, m, d] = iso.split('-').map(Number);\n  try {\n    return new Intl.DateTimeFormat(locale || 'en-US', { dateStyle: 'medium', timeZone: 'UTC' }).format(new Date(Date.UTC(y, m - 1, d)));\n  } catch {\n    return iso;\n  }\n}\n// ---- text + email layout (shared helper, inlined at build time) ----\nfunction escapeHtml(s) {\n  return String(s ?? '').replace(/[&<>\"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '\"': '&quot;', \"'\": '&#39;' })[c]);\n}\n\n/** Replace {placeholders}; unknown placeholders are left visible so typos get noticed. */\nfunction fill(template, vars) {\n  return String(template ?? '').replace(/\\{(\\w+)\\}/g, (match, key) => (key in vars ? String(vars[key] ?? '') : match));\n}\n\nfunction isEmail(s) {\n  return /^[^\\s@<>(),;:]+@[^\\s@<>(),;:]+\\.[a-z]{2,}$/i.test(String(s ?? '').trim());\n}\n\nfunction firstName(fullName) {\n  const first = String(fullName ?? '').trim().split(/\\s+/)[0] || '';\n  return first ? first.charAt(0).toUpperCase() + first.slice(1) : '';\n}\n\n/** \"1,250.00\", \"$1250\", 1250 -> 1250. Returns null when no number is present. */\nfunction toAmount(value) {\n  if (typeof value === 'number') return value;\n  const cleaned = String(value ?? '').replace(/[^0-9.-]/g, '');\n  if (!cleaned || isNaN(Number(cleaned))) return null;\n  return Number(cleaned);\n}\n\nfunction money(amount, currency, locale) {\n  if (amount === null || amount === undefined) return '';\n  try {\n    return new Intl.NumberFormat(locale || 'en-US', { style: 'currency', currency: (currency || 'USD').toUpperCase() }).format(amount);\n  } catch {\n    return `${currency || ''} ${Number(amount).toFixed(2)}`.trim();\n  }\n}\n\n/** Plain text with blank-line paragraphs -> simple HTML paragraphs. */\nfunction textToHtml(text) {\n  return String(text ?? '')\n    .trim()\n    .split(/\\n\\s*\\n/)\n    .map((p) => `<p style=\"margin:0 0 14px\">${escapeHtml(p.trim()).replace(/\\n/g, '<br>')}</p>`)\n    .join('\\n');\n}\n\n/** Minimal, client-safe HTML email: paragraphs, optional button, small footer. */\nfunction emailHtml({ bodyText, buttonLabel, buttonUrl, footer }) {\n  const button = buttonUrl\n    ? `<p style=\"margin:22px 0\"><a href=\"${escapeHtml(buttonUrl)}\" style=\"background:#1f6feb;color:#ffffff;text-decoration:none;padding:11px 20px;border-radius:6px;display:inline-block;font-weight:600\">${escapeHtml(buttonLabel || 'Open link')}</a></p>`\n    : '';\n  const foot = footer ? `<p style=\"margin:24px 0 0;color:#6b7280;font-size:12px\">${escapeHtml(footer)}</p>` : '';\n  return `<div style=\"font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.55;color:#111827;max-width:560px\">\\n${textToHtml(bodyText)}\\n${button}${foot}\\n</div>`;\n}\n\n/** Owner-facing HTML table. rows: array of arrays of cell text. */\nfunction htmlTable(headers, rows) {\n  const th = headers.map((h) => `<th style=\"text-align:left;padding:6px 10px;border-bottom:1px solid #d1d5db;font-size:13px\">${escapeHtml(h)}</th>`).join('');\n  const body = rows\n    .map((r) => `<tr>${r.map((c) => `<td style=\"padding:6px 10px;border-bottom:1px solid #eef0f3;font-size:13px\">${escapeHtml(c)}</td>`).join('')}</tr>`)\n    .join('\\n');\n  return `<table style=\"border-collapse:collapse;margin:8px 0 18px\">\\n<tr>${th}</tr>\\n${body}\\n</table>`;\n}\n// ---- invoice rows (shared helper, inlined at build time) ----\n// One \"Invoices\" sheet drives both pre-due reminders and post-due follow-ups.\n// Only rows whose status is explicitly open are ever contacted; a blank status\n// is treated as \"not ready\" so a forgotten Paid mark never triggers a dunning email.\nconst OPEN_STATUSES = ['unpaid', 'open', 'sent', 'due', 'overdue', 'partial', 'partially paid'];\nconst CLOSED_STATUSES = ['paid', 'void', 'cancelled', 'canceled', 'disputed', 'paused', 'written off', 'refunded', 'draft'];\n\n/** Normalise one sheet row. Returns { ok, reason, invoice }. */\nfunction readInvoiceRow(row, cfg) {\n  const status = String(row.status ?? '').trim().toLowerCase();\n  const id = String(row.invoice_id ?? '').trim();\n  if (!id) return { ok: false, reason: 'missing invoice_id', closed: false };\n  if (CLOSED_STATUSES.includes(status)) return { ok: false, reason: `status ${status}`, closed: true };\n  if (!OPEN_STATUSES.includes(status)) return { ok: false, reason: status ? `unknown status \"${row.status}\"` : 'blank status', closed: false };\n  const email = String(row.client_email ?? '').trim();\n  if (!isEmail(email)) return { ok: false, reason: email ? `bad email \"${email}\"` : 'missing client_email', closed: false };\n  const due = toIsoDate(row.due_date, cfg.date_format);\n  if (!due) return { ok: false, reason: `unreadable due_date \"${row.due_date ?? ''}\"`, closed: false };\n  const amount = toAmount(row.amount);\n  if (amount === null) return { ok: false, reason: `unreadable amount \"${row.amount ?? ''}\"`, closed: false };\n  const currency = String(row.currency || cfg.default_currency || 'USD').trim().toUpperCase();\n  return {\n    ok: true,\n    invoice: {\n      invoice_id: id,\n      client_name: String(row.client_name ?? '').trim(),\n      client_email: email,\n      client_phone: String(row.client_phone ?? '').trim(),\n      amount,\n      currency,\n      due_date: due,\n      payment_link: String(row.payment_link ?? '').trim(),\n      reminder_stage: Math.max(0, Math.min(3, parseInt(row.reminder_stage, 10) || 0)),\n      last_reminder_at: toIsoDate(row.last_reminder_at, 'YYYY-MM-DD'),\n      pre_due_reminders: String(row.pre_due_reminders ?? '').trim(),\n    },\n  };\n}\n\n/** Placeholder values every template can use. */\nfunction invoiceVars(inv, cfg, today) {\n  const daysOverdue = daysBetween(inv.due_date, today);\n  return {\n    client_name: inv.client_name || 'there',\n    first_name: firstName(inv.client_name) || 'there',\n    invoice_id: inv.invoice_id,\n    amount: money(inv.amount, inv.currency, cfg.locale),\n    due_date: displayDate(inv.due_date, cfg.locale),\n    days_overdue: Math.max(0, daysOverdue),\n    days_until_due: Math.max(0, -daysOverdue),\n    business_name: cfg.business_name,\n    sender_name: cfg.sender_name,\n    payment_link: inv.payment_link,\n    payment_instructions: cfg.payment_instructions || '',\n  };\n}\nconst cfg = $('Config').first().json;\nconst today = $now.toISODate();\nconst testMode = cfg.test_mode === true || String(cfg.test_mode).toLowerCase() === 'true';\nconst minGap = Number(cfg.min_days_between_reminders) || 0;\nconst stages = [1, 2, 3].map((n) => ({\n  stage: n,\n  afterDays: Number(cfg[`stage${n}_after_days`]),\n  subject: cfg[`stage${n}_subject`],\n  body: cfg[`stage${n}_body`],\n}));\n\nconst out = [];\n$input.all().forEach((item, index) => {\n  const parsed = readInvoiceRow(item.json, cfg);\n  if (!parsed.ok) return;\n  const inv = parsed.invoice;\n  const daysOverdue = daysBetween(inv.due_date, today);\n  const next = stages[inv.reminder_stage]; // reminder_stage 0 -> stage 1, 3 -> done\n  if (!next || daysOverdue < next.afterDays) return;\n  if (inv.last_reminder_at && daysBetween(inv.last_reminder_at, today) < minGap) return;\n\n  const vars = invoiceVars(inv, cfg, today);\n  const subject = fill(next.subject, vars);\n  out.push({\n    json: {\n      invoice_id: inv.invoice_id,\n      client_name: inv.client_name,\n      client_email: inv.client_email,\n      amount_display: vars.amount,\n      days_overdue: daysOverdue,\n      stage: next.stage,\n      to: testMode ? cfg.owner_email : inv.client_email,\n      subject: testMode ? `[TEST -> ${inv.client_email}] ${subject}` : subject,\n      html: emailHtml({\n        bodyText: fill(next.body, vars),\n        buttonLabel: `Pay ${vars.amount}`,\n        buttonUrl: inv.payment_link,\n        footer: `${cfg.business_name} · Invoice ${inv.invoice_id}`,\n      }),\n      new_stage: next.stage,\n      last_reminder_at: today,\n      test_mode: testMode,\n    },\n    pairedItem: { item: index },\n  });\n});\n\nreturn out;\n"
+      },
+      "id": "5e9665b1-98fa-4ea7-a272-71838a64d6fa",
+      "name": "Plan reminders",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        340
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.to }}",
+        "subject": "={{ $json.subject }}",
+        "emailType": "html",
+        "message": "={{ $json.html }}",
+        "options": {
+          "appendAttribution": false,
+          "senderName": "={{ $('Config').first().json.sender_name }}"
+        }
+      },
+      "id": "c0a7df7b-92ee-4e95-af42-1e35ec7e2c4e",
+      "name": "Send reminder",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        880,
+        340
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "a14b3af3-1752-4982-ad6b-09cb11cab519",
+              "leftValue": "={{ $('Config').first().json.test_mode }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "bbe95735-5cd2-469f-a69f-bb435f6b7b7c",
+      "name": "Live mode?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1120,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "mode": "url",
+          "value": "={{ $('Config').first().json.sheet_url }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "={{ $('Config').first().json.invoices_tab }}"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "invoice_id": "={{ $('Plan reminders').item.json.invoice_id }}",
+            "reminder_stage": "={{ $('Plan reminders').item.json.new_stage }}",
+            "last_reminder_at": "={{ $('Plan reminders').item.json.last_reminder_at }}"
+          },
+          "matchingColumns": [
+            "invoice_id"
+          ],
+          "schema": [
+            {
+              "id": "invoice_id",
+              "displayName": "invoice_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "reminder_stage",
+              "displayName": "reminder_stage",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "last_reminder_at",
+              "displayName": "last_reminder_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "id": "00d701e7-53e6-49c7-a08f-f0bc779fdd44",
+      "name": "Update invoice row",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1360,
+        180
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Builds one summary email for the owner: what was sent today, how much is\n// overdue in total, and which sheet rows need fixing.\n// ---- dates (shared helper, inlined at build time) ----\n// Sheet dates arrive as serial numbers (date cells read as SERIAL_NUMBER), ISO\n// text (\"2026-10-31\"), or day/month text whose order depends on DATE_FORMAT.\nfunction isoFromParts(y, m, d) {\n  const dt = new Date(Date.UTC(y, m - 1, d));\n  if (dt.getUTCFullYear() !== y || dt.getUTCMonth() !== m - 1 || dt.getUTCDate() !== d) return null;\n  return dt.toISOString().slice(0, 10);\n}\n\nfunction toIsoDate(value, dateFormat) {\n  if (value === null || value === undefined) return null;\n  const s = String(value).trim();\n  if (!s) return null;\n  if (/^\\d+(\\.\\d+)?$/.test(s)) {\n    const serial = Number(s);\n    if (serial < 20000 || serial > 80000) return null; // not a plausible 1954-2119 date\n    return new Date(Date.UTC(1899, 11, 30) + Math.floor(serial) * 86400000).toISOString().slice(0, 10);\n  }\n  let m = s.match(/^(\\d{4})-(\\d{1,2})-(\\d{1,2})(?:[T ].*)?$/);\n  if (m) return isoFromParts(+m[1], +m[2], +m[3]);\n  m = s.match(/^(\\d{1,2})[/.-](\\d{1,2})[/.-](\\d{4})$/);\n  if (m) {\n    const [a, b, y] = [+m[1], +m[2], +m[3]];\n    return String(dateFormat).toUpperCase().startsWith('MM') ? isoFromParts(y, a, b) : isoFromParts(y, b, a);\n  }\n  const parsed = new Date(s); // \"Oct 31, 2026\", \"31 October 2026\"\n  if (!isNaN(parsed)) return isoFromParts(parsed.getFullYear(), parsed.getMonth() + 1, parsed.getDate());\n  return null;\n}\n\n/** Whole days from `fromIso` to `toIso` (positive when toIso is later). */\nfunction daysBetween(fromIso, toIso) {\n  const [a, b] = [fromIso, toIso].map((iso) => {\n    const [y, m, d] = iso.split('-').map(Number);\n    return Date.UTC(y, m - 1, d);\n  });\n  return Math.round((b - a) / 86400000);\n}\n\nfunction displayDate(iso, locale) {\n  const [y, m, d] = iso.split('-').map(Number);\n  try {\n    return new Intl.DateTimeFormat(locale || 'en-US', { dateStyle: 'medium', timeZone: 'UTC' }).format(new Date(Date.UTC(y, m - 1, d)));\n  } catch {\n    return iso;\n  }\n}\n// ---- text + email layout (shared helper, inlined at build time) ----\nfunction escapeHtml(s) {\n  return String(s ?? '').replace(/[&<>\"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '\"': '&quot;', \"'\": '&#39;' })[c]);\n}\n\n/** Replace {placeholders}; unknown placeholders are left visible so typos get noticed. */\nfunction fill(template, vars) {\n  return String(template ?? '').replace(/\\{(\\w+)\\}/g, (match, key) => (key in vars ? String(vars[key] ?? '') : match));\n}\n\nfunction isEmail(s) {\n  return /^[^\\s@<>(),;:]+@[^\\s@<>(),;:]+\\.[a-z]{2,}$/i.test(String(s ?? '').trim());\n}\n\nfunction firstName(fullName) {\n  const first = String(fullName ?? '').trim().split(/\\s+/)[0] || '';\n  return first ? first.charAt(0).toUpperCase() + first.slice(1) : '';\n}\n\n/** \"1,250.00\", \"$1250\", 1250 -> 1250. Returns null when no number is present. */\nfunction toAmount(value) {\n  if (typeof value === 'number') return value;\n  const cleaned = String(value ?? '').replace(/[^0-9.-]/g, '');\n  if (!cleaned || isNaN(Number(cleaned))) return null;\n  return Number(cleaned);\n}\n\nfunction money(amount, currency, locale) {\n  if (amount === null || amount === undefined) return '';\n  try {\n    return new Intl.NumberFormat(locale || 'en-US', { style: 'currency', currency: (currency || 'USD').toUpperCase() }).format(amount);\n  } catch {\n    return `${currency || ''} ${Number(amount).toFixed(2)}`.trim();\n  }\n}\n\n/** Plain text with blank-line paragraphs -> simple HTML paragraphs. */\nfunction textToHtml(text) {\n  return String(text ?? '')\n    .trim()\n    .split(/\\n\\s*\\n/)\n    .map((p) => `<p style=\"margin:0 0 14px\">${escapeHtml(p.trim()).replace(/\\n/g, '<br>')}</p>`)\n    .join('\\n');\n}\n\n/** Minimal, client-safe HTML email: paragraphs, optional button, small footer. */\nfunction emailHtml({ bodyText, buttonLabel, buttonUrl, footer }) {\n  const button = buttonUrl\n    ? `<p style=\"margin:22px 0\"><a href=\"${escapeHtml(buttonUrl)}\" style=\"background:#1f6feb;color:#ffffff;text-decoration:none;padding:11px 20px;border-radius:6px;display:inline-block;font-weight:600\">${escapeHtml(buttonLabel || 'Open link')}</a></p>`\n    : '';\n  const foot = footer ? `<p style=\"margin:24px 0 0;color:#6b7280;font-size:12px\">${escapeHtml(footer)}</p>` : '';\n  return `<div style=\"font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.55;color:#111827;max-width:560px\">\\n${textToHtml(bodyText)}\\n${button}${foot}\\n</div>`;\n}\n\n/** Owner-facing HTML table. rows: array of arrays of cell text. */\nfunction htmlTable(headers, rows) {\n  const th = headers.map((h) => `<th style=\"text-align:left;padding:6px 10px;border-bottom:1px solid #d1d5db;font-size:13px\">${escapeHtml(h)}</th>`).join('');\n  const body = rows\n    .map((r) => `<tr>${r.map((c) => `<td style=\"padding:6px 10px;border-bottom:1px solid #eef0f3;font-size:13px\">${escapeHtml(c)}</td>`).join('')}</tr>`)\n    .join('\\n');\n  return `<table style=\"border-collapse:collapse;margin:8px 0 18px\">\\n<tr>${th}</tr>\\n${body}\\n</table>`;\n}\n// ---- invoice rows (shared helper, inlined at build time) ----\n// One \"Invoices\" sheet drives both pre-due reminders and post-due follow-ups.\n// Only rows whose status is explicitly open are ever contacted; a blank status\n// is treated as \"not ready\" so a forgotten Paid mark never triggers a dunning email.\nconst OPEN_STATUSES = ['unpaid', 'open', 'sent', 'due', 'overdue', 'partial', 'partially paid'];\nconst CLOSED_STATUSES = ['paid', 'void', 'cancelled', 'canceled', 'disputed', 'paused', 'written off', 'refunded', 'draft'];\n\n/** Normalise one sheet row. Returns { ok, reason, invoice }. */\nfunction readInvoiceRow(row, cfg) {\n  const status = String(row.status ?? '').trim().toLowerCase();\n  const id = String(row.invoice_id ?? '').trim();\n  if (!id) return { ok: false, reason: 'missing invoice_id', closed: false };\n  if (CLOSED_STATUSES.includes(status)) return { ok: false, reason: `status ${status}`, closed: true };\n  if (!OPEN_STATUSES.includes(status)) return { ok: false, reason: status ? `unknown status \"${row.status}\"` : 'blank status', closed: false };\n  const email = String(row.client_email ?? '').trim();\n  if (!isEmail(email)) return { ok: false, reason: email ? `bad email \"${email}\"` : 'missing client_email', closed: false };\n  const due = toIsoDate(row.due_date, cfg.date_format);\n  if (!due) return { ok: false, reason: `unreadable due_date \"${row.due_date ?? ''}\"`, closed: false };\n  const amount = toAmount(row.amount);\n  if (amount === null) return { ok: false, reason: `unreadable amount \"${row.amount ?? ''}\"`, closed: false };\n  const currency = String(row.currency || cfg.default_currency || 'USD').trim().toUpperCase();\n  return {\n    ok: true,\n    invoice: {\n      invoice_id: id,\n      client_name: String(row.client_name ?? '').trim(),\n      client_email: email,\n      client_phone: String(row.client_phone ?? '').trim(),\n      amount,\n      currency,\n      due_date: due,\n      payment_link: String(row.payment_link ?? '').trim(),\n      reminder_stage: Math.max(0, Math.min(3, parseInt(row.reminder_stage, 10) || 0)),\n      last_reminder_at: toIsoDate(row.last_reminder_at, 'YYYY-MM-DD'),\n      pre_due_reminders: String(row.pre_due_reminders ?? '').trim(),\n    },\n  };\n}\n\n/** Placeholder values every template can use. */\nfunction invoiceVars(inv, cfg, today) {\n  const daysOverdue = daysBetween(inv.due_date, today);\n  return {\n    client_name: inv.client_name || 'there',\n    first_name: firstName(inv.client_name) || 'there',\n    invoice_id: inv.invoice_id,\n    amount: money(inv.amount, inv.currency, cfg.locale),\n    due_date: displayDate(inv.due_date, cfg.locale),\n    days_overdue: Math.max(0, daysOverdue),\n    days_until_due: Math.max(0, -daysOverdue),\n    business_name: cfg.business_name,\n    sender_name: cfg.sender_name,\n    payment_link: inv.payment_link,\n    payment_instructions: cfg.payment_instructions || '',\n  };\n}\nconst cfg = $('Config').first().json;\nconst today = $now.toISODate();\nconst sent = $input.all().map((_, i) => $('Plan reminders').itemMatching(i).json);\n\nconst overdue = {};\nlet overdueCount = 0;\nconst problems = [];\nfor (const { json: row } of $('Read invoices').all()) {\n  const values = Object.entries(row).filter(([k]) => k !== 'row_number').map(([, v]) => String(v ?? '').trim());\n  if (values.every((v) => !v)) continue;\n  const parsed = readInvoiceRow(row, cfg);\n  if (!parsed.ok) {\n    if (!parsed.closed) problems.push([row.invoice_id || `row ${row.row_number ?? '?'}`, parsed.reason]);\n    continue;\n  }\n  if (daysBetween(parsed.invoice.due_date, today) > 0) {\n    overdueCount += 1;\n    overdue[parsed.invoice.currency] = (overdue[parsed.invoice.currency] || 0) + parsed.invoice.amount;\n  }\n}\nconst overdueText = Object.entries(overdue).map(([cur, amt]) => money(amt, cur, cfg.locale)).join(' + ') || money(0, cfg.default_currency, cfg.locale);\nconst testMode = sent.some((s) => s.test_mode);\nconst stageName = { 1: 'Friendly', 2: 'Firm', 3: 'Final' };\n\nconst parts = [];\nif (testMode) parts.push('<p style=\"background:#fff7d6;padding:10px;border-radius:6px\"><b>Test mode is on.</b> Every reminder below went to you instead of the client, and the sheet was not updated. Set <code>test_mode</code> to false in the Config node to go live.</p>');\nparts.push(`<p>${sent.length} follow-up email(s) sent today. Total overdue: <b>${escapeHtml(overdueText)}</b> across ${overdueCount} invoice(s).</p>`);\nparts.push(htmlTable(\n  ['Client', 'Invoice', 'Amount', 'Days overdue', 'Reminder'],\n  sent.map((s) => [s.client_name || s.client_email, s.invoice_id, s.amount_display, String(s.days_overdue), stageName[s.stage]]),\n));\nconst finals = sent.filter((s) => s.stage === 3);\nif (finals.length) parts.push(`<p><b>Final notices went out to:</b> ${escapeHtml(finals.map((s) => s.client_name || s.client_email).join(', '))}. Automated reminders stop here, so a personal call is the next step.</p>`);\nif (problems.length) {\n  parts.push('<p><b>Rows the autopilot skipped</b> (fix these in the sheet):</p>');\n  parts.push(htmlTable(['Invoice', 'Problem'], problems.slice(0, 50)));\n}\n\nreturn [{\n  json: {\n    to: cfg.owner_email,\n    subject: `${testMode ? '[TEST] ' : ''}Invoice follow-ups: ${sent.length} sent, ${overdueText} overdue`,\n    html: `<div style=\"font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:14px;color:#111827\">${parts.join('\\n')}</div>`,\n  },\n}];\n"
+      },
+      "id": "cdf8ed25-e3c0-485e-a402-8a57a5a36b70",
+      "name": "Build owner digest",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.to }}",
+        "subject": "={{ $json.subject }}",
+        "emailType": "html",
+        "message": "={{ $json.html }}",
+        "options": {
+          "appendAttribution": false,
+          "senderName": "SMB Autopilot"
+        }
+      },
+      "id": "4a6c4e71-0268-45d9-a36d-a83399402776",
+      "name": "Email owner digest",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1360,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Gathers every email that failed to send into one alert for the owner.\n// Items arrive on the email node's error output: { error } plus a link back to\n// the planned reminder they came from.\n// ---- text + email layout (shared helper, inlined at build time) ----\nfunction escapeHtml(s) {\n  return String(s ?? '').replace(/[&<>\"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '\"': '&quot;', \"'\": '&#39;' })[c]);\n}\n\n/** Replace {placeholders}; unknown placeholders are left visible so typos get noticed. */\nfunction fill(template, vars) {\n  return String(template ?? '').replace(/\\{(\\w+)\\}/g, (match, key) => (key in vars ? String(vars[key] ?? '') : match));\n}\n\nfunction isEmail(s) {\n  return /^[^\\s@<>(),;:]+@[^\\s@<>(),;:]+\\.[a-z]{2,}$/i.test(String(s ?? '').trim());\n}\n\nfunction firstName(fullName) {\n  const first = String(fullName ?? '').trim().split(/\\s+/)[0] || '';\n  return first ? first.charAt(0).toUpperCase() + first.slice(1) : '';\n}\n\n/** \"1,250.00\", \"$1250\", 1250 -> 1250. Returns null when no number is present. */\nfunction toAmount(value) {\n  if (typeof value === 'number') return value;\n  const cleaned = String(value ?? '').replace(/[^0-9.-]/g, '');\n  if (!cleaned || isNaN(Number(cleaned))) return null;\n  return Number(cleaned);\n}\n\nfunction money(amount, currency, locale) {\n  if (amount === null || amount === undefined) return '';\n  try {\n    return new Intl.NumberFormat(locale || 'en-US', { style: 'currency', currency: (currency || 'USD').toUpperCase() }).format(amount);\n  } catch {\n    return `${currency || ''} ${Number(amount).toFixed(2)}`.trim();\n  }\n}\n\n/** Plain text with blank-line paragraphs -> simple HTML paragraphs. */\nfunction textToHtml(text) {\n  return String(text ?? '')\n    .trim()\n    .split(/\\n\\s*\\n/)\n    .map((p) => `<p style=\"margin:0 0 14px\">${escapeHtml(p.trim()).replace(/\\n/g, '<br>')}</p>`)\n    .join('\\n');\n}\n\n/** Minimal, client-safe HTML email: paragraphs, optional button, small footer. */\nfunction emailHtml({ bodyText, buttonLabel, buttonUrl, footer }) {\n  const button = buttonUrl\n    ? `<p style=\"margin:22px 0\"><a href=\"${escapeHtml(buttonUrl)}\" style=\"background:#1f6feb;color:#ffffff;text-decoration:none;padding:11px 20px;border-radius:6px;display:inline-block;font-weight:600\">${escapeHtml(buttonLabel || 'Open link')}</a></p>`\n    : '';\n  const foot = footer ? `<p style=\"margin:24px 0 0;color:#6b7280;font-size:12px\">${escapeHtml(footer)}</p>` : '';\n  return `<div style=\"font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.55;color:#111827;max-width:560px\">\\n${textToHtml(bodyText)}\\n${button}${foot}\\n</div>`;\n}\n\n/** Owner-facing HTML table. rows: array of arrays of cell text. */\nfunction htmlTable(headers, rows) {\n  const th = headers.map((h) => `<th style=\"text-align:left;padding:6px 10px;border-bottom:1px solid #d1d5db;font-size:13px\">${escapeHtml(h)}</th>`).join('');\n  const body = rows\n    .map((r) => `<tr>${r.map((c) => `<td style=\"padding:6px 10px;border-bottom:1px solid #eef0f3;font-size:13px\">${escapeHtml(c)}</td>`).join('')}</tr>`)\n    .join('\\n');\n  return `<table style=\"border-collapse:collapse;margin:8px 0 18px\">\\n<tr>${th}</tr>\\n${body}\\n</table>`;\n}\nconst cfg = $('Config').first().json;\nconst rows = $input.all().map((item, i) => {\n  const planned = $('Plan reminders').itemMatching(i).json;\n  const err = item.json.error;\n  const message = typeof err === 'string' ? err : err?.message || JSON.stringify(err ?? item.json).slice(0, 300);\n  return [planned.client_name || '', planned.client_email || planned.to || '', planned.invoice_id || '', message];\n});\n\nreturn [{\n  json: {\n    to: cfg.owner_email,\n    subject: `Action needed: ${rows.length} reminder email(s) failed to send`,\n    html: `<div style=\"font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:14px;color:#111827\">\n<p>These reminders did not go out, so the sheet was left unchanged for them and they will be retried on the next run. A bad email address is the usual cause.</p>\n${htmlTable(['Client', 'Email', 'Invoice', 'Error'], rows)}\n</div>`,\n  },\n}];\n"
+      },
+      "id": "db0eea29-3ba1-40be-aec7-03e33671ae04",
+      "name": "Collect failures",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        600
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.to }}",
+        "subject": "={{ $json.subject }}",
+        "emailType": "html",
+        "message": "={{ $json.html }}",
+        "options": {
+          "appendAttribution": false,
+          "senderName": "SMB Autopilot"
+        }
+      },
+      "id": "3ea4af66-0171-46e6-a7d3-78437b77305a",
+      "name": "Alert owner: failed sends",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1360,
+        600
+      ]
+    }
+  ],
+  "connections": {
+    "Every weekday at 9am": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config": {
+      "main": [
+        [
+          {
+            "node": "Read invoices",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read invoices": {
+      "main": [
+        [
+          {
+            "node": "Plan reminders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Plan reminders": {
+      "main": [
+        [
+          {
+            "node": "Send reminder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send reminder": {
+      "main": [
+        [
+          {
+            "node": "Live mode?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Build owner digest",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Collect failures",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Live mode?": {
+      "main": [
+        [
+          {
+            "node": "Update invoice row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build owner digest": {
+      "main": [
+        [
+          {
+            "node": "Email owner digest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collect failures": {
+      "main": [
+        [
+          {
+            "node": "Alert owner: failed sends",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "description": "Chases overdue invoices from a Google Sheet with a friendly, firm, final email sequence and a daily owner digest."
+  },
+  "active": false
+}

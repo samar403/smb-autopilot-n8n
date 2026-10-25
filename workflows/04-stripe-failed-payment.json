@@ -1,0 +1,296 @@
+{
+  "name": "SMB Autopilot · Stripe failed-payment recovery",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Stripe failed-payment recovery\nWhen a card payment on a Stripe invoice or subscription fails, the customer gets a friendly email (and optional SMS) with a link to fix it, and you get an alert.\n\n**Setup (10 min)**\n1. Connect a Stripe credential (secret key) on the trigger. n8n registers the webhook in Stripe when you activate, so n8n must be reachable from the internet.\n2. Fill in **Config** and connect Gmail.\n3. SMS optional: connect Twilio and set **sms_enabled = true**, or deactivate \"Send SMS\".\n4. Use **test_mode = true** while testing; Stripe's \"Send test webhook\" works for this.\n\nTip: switch off Stripe's own failed-payment emails (Settings → Billing → Customer emails) if you want only these.",
+        "width": 400,
+        "height": 480,
+        "color": 4
+      },
+      "id": "86fa69ec-6fc5-42c0-ade2-09bb9d5bdfa3",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -460,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "events": [
+          "invoice.payment_failed"
+        ]
+      },
+      "id": "f76b44af-595b-42a7-ae24-60270cf5fd65",
+      "name": "Stripe payment failed",
+      "type": "n8n-nodes-base.stripeTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        340
+      ],
+      "webhookId": "9f1c314b-fa9b-4471-a6ee-6df198bc0ae1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c4319d7d-2108-4705-ad5e-0c46d20ce5b2",
+              "name": "business_name",
+              "value": "Acme Plumbing",
+              "type": "string"
+            },
+            {
+              "id": "06efc4b3-4dd0-40cb-ac8e-2b3a40d5b457",
+              "name": "sender_name",
+              "value": "Jordan at Acme Plumbing",
+              "type": "string"
+            },
+            {
+              "id": "d5f26a5f-5cc0-49ed-af83-942deb301dfb",
+              "name": "owner_email",
+              "value": "you@example.com",
+              "type": "string"
+            },
+            {
+              "id": "fb11ca71-d728-4a6c-aefb-ec88677d3246",
+              "name": "owner_phone",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "c6892dad-5425-42fd-a72b-c8047d44f105",
+              "name": "test_mode",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "8d056520-89af-40d5-aa52-e0536cf04f61",
+              "name": "locale",
+              "value": "en-US",
+              "type": "string"
+            },
+            {
+              "id": "0611ea49-0b50-40c5-ac8f-6116dca307a6",
+              "name": "customer_subject",
+              "value": "Your payment to {business_name} did not go through",
+              "type": "string"
+            },
+            {
+              "id": "15ea4312-7467-4961-a792-1f9fb531c797",
+              "name": "customer_body",
+              "value": "Hi {first_name},\n\nWe tried to collect {amount} for invoice {invoice_id}, but the payment was declined. This usually happens when a card expires or a bank blocks the charge, and it takes a minute to fix.\n\nPlease use the button below to update your payment details. {retry_line}\n\nThanks,\n{sender_name}",
+              "type": "string"
+            },
+            {
+              "id": "201b4ad7-a527-4aa9-adfa-b5a796fa1502",
+              "name": "sms_enabled",
+              "value": false,
+              "type": "boolean"
+            },
+            {
+              "id": "7811a4e1-b3e8-4056-a060-72676e667bec",
+              "name": "twilio_from",
+              "value": "+15550001234",
+              "type": "string"
+            },
+            {
+              "id": "6d63463d-fc5e-447e-aac7-50db3d5c4dfc",
+              "name": "sms_template",
+              "value": "{business_name}: your payment of {amount} did not go through. Update your details here: {payment_link} Reply STOP to opt out.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "6b0bfc1d-f06c-4521-ac9c-fdd6c1a07a4f",
+      "name": "Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        340
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Shapes a Stripe \"invoice.payment_failed\" event into a customer email, an\n// optional SMS, and an owner alert.\n// ---- text + email layout (shared helper, inlined at build time) ----\nfunction escapeHtml(s) {\n  return String(s ?? '').replace(/[&<>\"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '\"': '&quot;', \"'\": '&#39;' })[c]);\n}\n\n/** Replace {placeholders}; unknown placeholders are left visible so typos get noticed. */\nfunction fill(template, vars) {\n  return String(template ?? '').replace(/\\{(\\w+)\\}/g, (match, key) => (key in vars ? String(vars[key] ?? '') : match));\n}\n\nfunction isEmail(s) {\n  return /^[^\\s@<>(),;:]+@[^\\s@<>(),;:]+\\.[a-z]{2,}$/i.test(String(s ?? '').trim());\n}\n\nfunction firstName(fullName) {\n  const first = String(fullName ?? '').trim().split(/\\s+/)[0] || '';\n  return first ? first.charAt(0).toUpperCase() + first.slice(1) : '';\n}\n\n/** \"1,250.00\", \"$1250\", 1250 -> 1250. Returns null when no number is present. */\nfunction toAmount(value) {\n  if (typeof value === 'number') return value;\n  const cleaned = String(value ?? '').replace(/[^0-9.-]/g, '');\n  if (!cleaned || isNaN(Number(cleaned))) return null;\n  return Number(cleaned);\n}\n\nfunction money(amount, currency, locale) {\n  if (amount === null || amount === undefined) return '';\n  try {\n    return new Intl.NumberFormat(locale || 'en-US', { style: 'currency', currency: (currency || 'USD').toUpperCase() }).format(amount);\n  } catch {\n    return `${currency || ''} ${Number(amount).toFixed(2)}`.trim();\n  }\n}\n\n/** Plain text with blank-line paragraphs -> simple HTML paragraphs. */\nfunction textToHtml(text) {\n  return String(text ?? '')\n    .trim()\n    .split(/\\n\\s*\\n/)\n    .map((p) => `<p style=\"margin:0 0 14px\">${escapeHtml(p.trim()).replace(/\\n/g, '<br>')}</p>`)\n    .join('\\n');\n}\n\n/** Minimal, client-safe HTML email: paragraphs, optional button, small footer. */\nfunction emailHtml({ bodyText, buttonLabel, buttonUrl, footer }) {\n  const button = buttonUrl\n    ? `<p style=\"margin:22px 0\"><a href=\"${escapeHtml(buttonUrl)}\" style=\"background:#1f6feb;color:#ffffff;text-decoration:none;padding:11px 20px;border-radius:6px;display:inline-block;font-weight:600\">${escapeHtml(buttonLabel || 'Open link')}</a></p>`\n    : '';\n  const foot = footer ? `<p style=\"margin:24px 0 0;color:#6b7280;font-size:12px\">${escapeHtml(footer)}</p>` : '';\n  return `<div style=\"font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.55;color:#111827;max-width:560px\">\\n${textToHtml(bodyText)}\\n${button}${foot}\\n</div>`;\n}\n\n/** Owner-facing HTML table. rows: array of arrays of cell text. */\nfunction htmlTable(headers, rows) {\n  const th = headers.map((h) => `<th style=\"text-align:left;padding:6px 10px;border-bottom:1px solid #d1d5db;font-size:13px\">${escapeHtml(h)}</th>`).join('');\n  const body = rows\n    .map((r) => `<tr>${r.map((c) => `<td style=\"padding:6px 10px;border-bottom:1px solid #eef0f3;font-size:13px\">${escapeHtml(c)}</td>`).join('')}</tr>`)\n    .join('\\n');\n  return `<table style=\"border-collapse:collapse;margin:8px 0 18px\">\\n<tr>${th}</tr>\\n${body}\\n</table>`;\n}\nconst cfg = $('Config').first().json;\nconst testMode = cfg.test_mode === true || String(cfg.test_mode).toLowerCase() === 'true';\nconst smsEnabled = cfg.sms_enabled === true || String(cfg.sms_enabled).toLowerCase() === 'true';\n// Stripe amounts are in the smallest currency unit, except zero-decimal currencies.\nconst ZERO_DECIMAL = ['bif', 'clp', 'djf', 'gnf', 'jpy', 'kmf', 'krw', 'mga', 'pyg', 'rwf', 'ugx', 'vnd', 'vuv', 'xaf', 'xof', 'xpf'];\nconst isPhone = (p) => /^\\+[1-9]\\d{7,14}$/.test(String(p ?? '').replace(/[\\s().-]/g, ''));\n\nreturn $('Stripe payment failed').all().map((item, index) => {\n  const event = item.json;\n  const inv = event.data?.object ?? event;\n  const currency = String(inv.currency || 'usd').toLowerCase();\n  const amount = Number(inv.amount_remaining ?? inv.amount_due ?? 0) / (ZERO_DECIMAL.includes(currency) ? 1 : 100);\n  const nextAttempt = inv.next_payment_attempt\n    ? new Intl.DateTimeFormat(cfg.locale || 'en-US', { dateStyle: 'medium' }).format(new Date(inv.next_payment_attempt * 1000))\n    : '';\n  const customerEmail = String(inv.customer_email || '').trim();\n  const vars = {\n    first_name: firstName(inv.customer_name) || 'there',\n    client_name: inv.customer_name || 'there',\n    amount: money(amount, currency, cfg.locale),\n    invoice_id: inv.number || inv.id || '',\n    business_name: cfg.business_name,\n    sender_name: cfg.sender_name,\n    payment_link: inv.hosted_invoice_url || '',\n    retry_line: nextAttempt ? `We'll automatically try again on ${nextAttempt}.` : '',\n  };\n  const subject = fill(cfg.customer_subject, vars);\n  const phone = String(inv.customer_phone || '').replace(/[\\s().-]/g, '');\n  const smsTo = !smsEnabled ? '' : testMode ? (isPhone(cfg.owner_phone) ? String(cfg.owner_phone).replace(/[\\s().-]/g, '') : '') : isPhone(phone) ? phone : '';\n  const sendTo = testMode || !isEmail(customerEmail) ? cfg.owner_email : customerEmail;\n\n  return {\n    json: {\n      to: sendTo,\n      subject: sendTo !== customerEmail ? `[${testMode ? 'TEST' : 'NO CUSTOMER EMAIL'} -> ${customerEmail || 'unknown'}] ${subject}` : subject,\n      html: emailHtml({\n        bodyText: fill(cfg.customer_body, vars),\n        buttonLabel: 'Update payment details',\n        buttonUrl: vars.payment_link,\n        footer: `${cfg.business_name} · Invoice ${vars.invoice_id}`,\n      }),\n      sms_to: smsTo,\n      sms_text: fill(cfg.sms_template, vars).replace(/\\s+/g, ' ').trim().slice(0, 320),\n      owner_subject: `Payment failed: ${inv.customer_name || customerEmail || 'customer'} - ${vars.amount}`,\n      owner_html: `<div style=\"font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:14px;color:#111827\">\n<p>A card payment failed and the customer has been ${testMode ? '<b>(test mode: not)</b> ' : ''}emailed a link to fix it.</p>\n${htmlTable(['Customer', 'Email', 'Amount', 'Invoice', 'Attempt', 'Next retry'], [[inv.customer_name || '-', customerEmail || '-', vars.amount, vars.invoice_id, String(inv.attempt_count ?? '-'), nextAttempt || 'none scheduled']])}\n${vars.payment_link ? `<p><a href=\"${escapeHtml(vars.payment_link)}\">Open the invoice in Stripe</a></p>` : ''}\n</div>`,\n    },\n    pairedItem: { item: index },\n  };\n});\n"
+      },
+      "id": "94f2d6ec-e430-4333-a848-09b430b1e33a",
+      "name": "Prepare messages",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        340
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.to }}",
+        "subject": "={{ $json.subject }}",
+        "emailType": "html",
+        "message": "={{ $json.html }}",
+        "options": {
+          "appendAttribution": false,
+          "senderName": "={{ $('Config').first().json.sender_name }}"
+        }
+      },
+      "id": "c045a5b7-f968-4979-a67f-9850e85799e8",
+      "name": "Email the customer",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        680,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "a6e6bb0c-d4fc-4387-ae06-abb80354c4b5",
+              "leftValue": "={{ $('Prepare messages').item.json.sms_to }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "3ac0d046-ed72-4f45-a90a-a19301b7c660",
+      "name": "Text the customer?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        900,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "from": "={{ $('Config').first().json.twilio_from }}",
+        "to": "={{ $('Prepare messages').item.json.sms_to }}",
+        "message": "={{ $('Prepare messages').item.json.sms_text }}",
+        "options": {}
+      },
+      "id": "472a43cb-17a4-48b7-a951-116218ca296d",
+      "name": "Send SMS",
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        220
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Config').first().json.owner_email }}",
+        "subject": "={{ $json.owner_subject }}",
+        "emailType": "html",
+        "message": "={{ $json.owner_html }}",
+        "options": {
+          "appendAttribution": false,
+          "senderName": "SMB Autopilot"
+        }
+      },
+      "id": "21017698-a001-4d5b-a441-76b9a008cedd",
+      "name": "Alert owner",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        680,
+        460
+      ]
+    }
+  ],
+  "connections": {
+    "Stripe payment failed": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config": {
+      "main": [
+        [
+          {
+            "node": "Prepare messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare messages": {
+      "main": [
+        [
+          {
+            "node": "Email the customer",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Alert owner",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email the customer": {
+      "main": [
+        [
+          {
+            "node": "Text the customer?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Text the customer?": {
+      "main": [
+        [
+          {
+            "node": "Send SMS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "description": "Emails and texts customers a fix-your-card link when a Stripe invoice payment fails, and alerts the owner."
+  },
+  "active": false
+}

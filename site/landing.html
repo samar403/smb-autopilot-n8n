@@ -1,0 +1,482 @@
+<title>SMB Autopilot</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,500..800&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: left-aligned back-office page; hero pairs the pitch with the owner's real morning digest; a days-overdue ruler is the one interactive moment. */
+:root {
+  --bg: #f3f5f2;
+  --surface: #ffffff;
+  --ink: #13201b;
+  --muted: #56645d;
+  --line: #d6ded9;
+  --accent: #0d6b52;
+  --accent-ink: #ffffff;
+  --signal: #a8500a;
+  --final: #b42318;
+  --tint: #e6efe9;
+  --display: "Archivo", "Arial Narrow", Arial, sans-serif;
+  --body: "Atkinson Hyperlegible", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1412; --surface: #151d1a; --ink: #e5ede9; --muted: #98a69f; --line: #26322d;
+    --accent: #43c39a; --accent-ink: #06231a; --signal: #f0a14c; --final: #f2837a; --tint: #1a2823;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1412; --surface: #151d1a; --ink: #e5ede9; --muted: #98a69f; --line: #26322d;
+  --accent: #43c39a; --accent-ink: #06231a; --signal: #f0a14c; --final: #f2837a; --tint: #1a2823;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 17px; line-height: 1.6; }
+.wrap { max-width: 1120px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+h1, h2, h3 { font-family: var(--display); font-stretch: 112%; line-height: 1.08; margin: 0; text-wrap: balance; letter-spacing: -0.01em; }
+h1 { font-size: clamp(2.3rem, 5.4vw, 4rem); font-weight: 800; font-stretch: 118%; }
+h2 { font-size: clamp(1.7rem, 3.2vw, 2.4rem); font-weight: 750; }
+h3 { font-size: 1.2rem; font-weight: 700; }
+p { margin: 0; }
+a { color: var(--accent); }
+.mono { font-family: var(--mono); font-size: 0.86em; }
+.eyebrow { font-family: var(--mono); font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.lede { color: var(--muted); font-size: 1.12rem; max-width: 34em; }
+section { padding-block: clamp(56px, 8vw, 96px); border-top: 1px solid var(--line); }
+.section-head { display: grid; gap: 12px; max-width: 46em; margin-bottom: 36px; }
+
+.btn { display: inline-flex; align-items: center; gap: 8px; font-family: var(--display); font-weight: 700; font-stretch: 105%; font-size: 1rem; text-decoration: none; padding: 13px 22px; border-radius: 6px; border: 2px solid var(--accent); transition: transform .15s ease, background .15s ease; }
+.btn-primary { background: var(--accent); color: var(--accent-ink); }
+.btn-ghost { color: var(--ink); border-color: var(--line); background: transparent; }
+.btn:hover { transform: translateY(-1px); }
+.btn:focus-visible, summary:focus-visible, input:focus-visible, button:focus-visible { outline: 3px solid var(--signal); outline-offset: 3px; }
+
+/* header */
+.top { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-block: 20px; flex-wrap: wrap; }
+.mark { font-family: var(--display); font-weight: 800; font-stretch: 125%; font-size: 1.15rem; letter-spacing: 0.01em; display: flex; align-items: center; gap: 10px; color: var(--ink); text-decoration: none; }
+.mark i { width: 22px; height: 22px; border-radius: 50%; border: 3px solid var(--accent); display: inline-block; position: relative; }
+.mark i::after { content: ""; position: absolute; left: 50%; top: 2px; width: 3px; height: 8px; background: var(--accent); transform: translateX(-50%); border-radius: 2px; }
+.top nav { display: flex; gap: 22px; flex-wrap: wrap; }
+.top nav a { color: var(--muted); text-decoration: none; font-size: 0.95rem; }
+.top nav a:hover { color: var(--ink); }
+
+/* hero */
+.hero { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: clamp(28px, 5vw, 64px); align-items: center; padding-block: clamp(32px, 6vw, 72px) clamp(56px, 8vw, 96px); }
+.hero-copy { display: grid; gap: 22px; }
+.hero-copy h1 em { font-style: normal; color: var(--accent); }
+.cta-row { display: flex; gap: 12px; flex-wrap: wrap; }
+.fineprint { color: var(--muted); font-size: 0.92rem; }
+
+.digest { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 18px 40px -24px rgba(10, 40, 30, 0.35); overflow: hidden; min-width: 0; }
+.digest-head { padding: 14px 18px; border-bottom: 1px solid var(--line); display: grid; gap: 4px; }
+.digest-head .row { display: flex; gap: 10px; font-size: 0.85rem; color: var(--muted); }
+.digest-head .row b { color: var(--ink); font-weight: 700; min-width: 3.6em; }
+.digest-subject { font-weight: 700; font-size: 1rem; }
+.digest-body { padding: 16px 18px 20px; display: grid; gap: 12px; font-size: 0.94rem; }
+.example-tag { justify-self: start; font-family: var(--mono); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); border: 1px dashed var(--line); padding: 2px 8px; border-radius: 4px; }
+.table-scroll { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; font-size: 0.86rem; }
+th { font-family: var(--mono); font-weight: 500; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+td.num { text-align: right; font-family: var(--mono); }
+.pill { font-family: var(--mono); font-size: 0.74rem; padding: 2px 8px; border-radius: 99px; border: 1px solid currentColor; }
+.pill.s1 { color: var(--accent); }
+.pill.s2 { color: var(--signal); }
+.pill.s3 { color: var(--final); }
+
+/* automations */
+.autos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); overflow: hidden; }
+.auto { padding: 26px; display: grid; gap: 10px; align-content: start; border-bottom: 1px solid var(--line); }
+.auto:nth-child(odd) { border-right: 1px solid var(--line); }
+.auto:nth-last-child(-n+2) { border-bottom: 0; }
+.auto .when { font-family: var(--mono); font-size: 0.8rem; color: var(--accent); }
+.auto p { color: var(--muted); }
+.auto .uses { font-size: 0.85rem; color: var(--muted); }
+.auto .uses b { color: var(--ink); font-weight: 700; }
+
+/* timeline demo */
+.demo { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(24px, 4vw, 48px); align-items: start; }
+.ruler-card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 22px; display: grid; gap: 18px; min-width: 0; }
+.ruler { position: relative; height: 64px; margin: 6px 6px 0; }
+.ruler .track { position: absolute; left: 0; right: 0; top: 30px; height: 4px; background: var(--line); border-radius: 2px; }
+.ruler .fill { position: absolute; left: 0; top: 30px; height: 4px; background: var(--signal); border-radius: 2px; transition: width .15s ease; }
+.ruler .stop { position: absolute; top: 0; transform: translateX(-50%); text-align: center; font-family: var(--mono); font-size: 0.72rem; color: var(--muted); white-space: nowrap; }
+.ruler .stop::after { content: ""; display: block; width: 12px; height: 12px; margin: 6px auto 0; border-radius: 50%; background: var(--surface); border: 3px solid var(--line); }
+.ruler .stop.hit::after { border-color: currentColor; background: currentColor; }
+.ruler .stop.s1.hit { color: var(--accent); }
+.ruler .stop.s2.hit { color: var(--signal); }
+.ruler .stop.s3.hit { color: var(--final); }
+.ruler .ticks { position: absolute; left: 0; right: 0; top: 46px; display: flex; justify-content: space-between; font-family: var(--mono); font-size: 0.68rem; color: var(--muted); }
+.controls { display: grid; gap: 14px; }
+.controls label { display: grid; gap: 6px; font-size: 0.92rem; }
+.controls .val { font-family: var(--mono); color: var(--ink); }
+input[type="range"] { width: 100%; accent-color: var(--signal); }
+.toggle { display: flex; align-items: center; gap: 10px; font-size: 0.92rem; cursor: pointer; }
+.toggle input { width: 18px; height: 18px; accent-color: var(--accent); }
+.status { font-size: 0.95rem; padding: 10px 12px; border-radius: 6px; background: var(--tint); }
+.email { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; min-width: 0; }
+.email .head { padding: 12px 18px; border-bottom: 1px solid var(--line); font-size: 0.86rem; color: var(--muted); display: grid; gap: 2px; }
+.email .head b { color: var(--ink); }
+.email .body { padding: 18px; white-space: pre-line; font-size: 0.95rem; }
+.email .pay { margin: 0 18px 20px; display: inline-block; background: #1f6feb; color: #ffffff; font-weight: 700; padding: 9px 16px; border-radius: 6px; font-size: 0.9rem; }
+.email.quiet .body { color: var(--muted); font-style: italic; }
+
+/* safety */
+.rules { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px 40px; }
+.rule { display: grid; gap: 6px; padding-left: 16px; border-left: 3px solid var(--accent); }
+.rule p { color: var(--muted); }
+
+/* process (a real sequence, so it is numbered) */
+.steps { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0; counter-reset: step; }
+.steps li { counter-increment: step; padding: 18px 18px 0 0; border-top: 3px solid var(--line); display: grid; gap: 6px; align-content: start; position: relative; }
+.steps li::before { content: counter(step); font-family: var(--mono); font-size: 0.8rem; color: var(--accent); }
+.steps li:first-child { border-top-color: var(--accent); }
+.steps .t { font-family: var(--mono); font-size: 0.76rem; color: var(--muted); }
+.steps p { color: var(--muted); font-size: 0.93rem; }
+
+/* pricing */
+.plans { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; align-items: stretch; }
+.plan { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 26px; display: grid; gap: 14px; grid-template-rows: auto auto auto 1fr auto; }
+.plan.pick { border: 2px solid var(--accent); }
+.plan .tag { font-family: var(--mono); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); min-height: 1.2em; }
+.price { font-family: var(--display); font-stretch: 112%; font-weight: 800; font-size: 2.4rem; line-height: 1; }
+.price small { font-family: var(--body); font-size: 0.9rem; font-weight: 400; color: var(--muted); }
+.plan ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; font-size: 0.94rem; }
+.plan li { padding-left: 22px; position: relative; }
+.plan li::before { content: ""; position: absolute; left: 2px; top: 0.55em; width: 10px; height: 6px; border-left: 2px solid var(--accent); border-bottom: 2px solid var(--accent); transform: rotate(-45deg); }
+.plan .when { font-size: 0.86rem; color: var(--muted); }
+.care { margin-top: 18px; display: flex; flex-wrap: wrap; gap: 12px 28px; align-items: baseline; justify-content: space-between; padding: 20px 24px; border: 1px dashed var(--line); border-radius: 10px; }
+.care p { color: var(--muted); max-width: 46em; }
+.care b { font-family: var(--display); font-stretch: 112%; font-size: 1.3rem; color: var(--ink); }
+
+/* faq */
+.faq { display: grid; gap: 0; max-width: 52em; }
+.faq details { border-bottom: 1px solid var(--line); padding: 16px 0; }
+.faq summary { cursor: pointer; font-weight: 700; list-style: none; display: flex; justify-content: space-between; gap: 16px; }
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary::after { content: "+"; font-family: var(--mono); color: var(--accent); }
+.faq details[open] summary::after { content: "–"; }
+.faq details p { color: var(--muted); margin-top: 10px; max-width: 44em; }
+
+/* closing */
+.closing { display: grid; gap: 18px; justify-items: start; }
+.owner-note { font-family: var(--mono); font-size: 0.78rem; color: var(--signal); border: 1px dashed var(--signal); padding: 4px 10px; border-radius: 4px; }
+footer { border-top: 1px solid var(--line); padding-block: 28px 40px; color: var(--muted); font-size: 0.85rem; display: grid; gap: 6px; }
+
+@media (max-width: 900px) {
+  .hero, .demo { grid-template-columns: 1fr; }
+  .plans { grid-template-columns: 1fr; }
+  .steps { grid-template-columns: 1fr; gap: 0; }
+  .steps li { padding: 14px 0 18px; border-top-width: 2px; }
+}
+@media (max-width: 680px) {
+  .autos, .rules { grid-template-columns: 1fr; }
+  .auto:nth-child(odd) { border-right: 0; }
+  .auto:nth-last-child(2) { border-bottom: 1px solid var(--line); }
+  .top nav { gap: 14px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
+}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <a class="mark" href="#top" id="top"><i aria-hidden="true"></i>SMB Autopilot</a>
+    <nav aria-label="Sections">
+      <a href="#automations">Automations</a>
+      <a href="#setup">How setup works</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#faq">FAQ</a>
+    </nav>
+  </header>
+
+  <div class="hero">
+    <div class="hero-copy">
+      <span class="eyebrow">Done-for-you automation for small businesses</span>
+      <h1>Get paid on time. Answer every lead in <em>under a minute</em>.</h1>
+      <p class="lede">I set up four automations that chase overdue invoices, remind clients before payments are due, rescue failed card payments and reply to every website inquiry. They run on your own accounts and start in test mode, so nothing reaches a customer until you have seen it.</p>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="#book">Book a free 15-minute call</a>
+        <a class="btn btn-ghost" href="#automations">See what's included</a>
+      </div>
+      <p class="fineprint">Running in about a week. You own everything, and it keeps working without me.</p>
+    </div>
+
+    <figure class="digest" aria-label="Example of the daily summary email the owner receives">
+      <div class="digest-head">
+        <div class="row"><b>From</b><span>SMB Autopilot</span></div>
+        <div class="row"><b>To</b><span>you, 9:02 AM</span></div>
+        <div class="digest-subject">Invoice follow-ups: 3 sent, $4,180.00 overdue</div>
+      </div>
+      <div class="digest-body">
+        <span class="example-tag">Example of your morning summary</span>
+        <p>3 follow-up emails sent today. Total overdue: <b>$4,180.00</b> across 4 invoices.</p>
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>Client</th><th>Invoice</th><th class="num">Amount</th><th class="num">Days</th><th>Reminder</th></tr></thead>
+            <tbody>
+              <tr><td>Dana Smith</td><td class="mono">INV-1042</td><td class="num">$1,250.00</td><td class="num">4</td><td><span class="pill s1">Friendly</span></td></tr>
+              <tr><td>Raj Patel</td><td class="mono">INV-1031</td><td class="num">$640.00</td><td class="num">12</td><td><span class="pill s2">Firm</span></td></tr>
+              <tr><td>Northside Dental</td><td class="mono">INV-1017</td><td class="num">$1,890.00</td><td class="num">23</td><td><span class="pill s3">Final</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p><b>Final notice went to Northside Dental.</b> Automated reminders stop here, so a personal call is the next step.</p>
+      </div>
+    </figure>
+  </div>
+</div>
+
+<section id="automations">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">What you get</span>
+      <h2>Four automations for the jobs that slip on busy days</h2>
+      <p class="lede">Each one sends from your own Gmail, in your words, and stops the moment it should.</p>
+    </div>
+    <div class="autos">
+      <article class="auto">
+        <span class="when">Weekdays · 9:00 AM</span>
+        <h3>Invoice follow-ups</h3>
+        <p>A friendly note 3 days after the due date, a firmer one at 10, a final one at 21. Mark an invoice Paid and it stops. You get one summary each morning instead of a spreadsheet to check.</p>
+        <span class="uses"><b>Uses:</b> your invoice sheet, Gmail</span>
+      </article>
+      <article class="auto">
+        <span class="when">Instant · website form</span>
+        <h3>Lead auto-reply</h3>
+        <p>Every inquiry gets a short, personal reply within a minute, written from facts you approve. The lead is logged, and you get an alert with their details and a one-tap reply.</p>
+        <span class="uses"><b>Uses:</b> your form, Gmail, Google Sheets, optional AI (Claude)</span>
+      </article>
+      <article class="auto">
+        <span class="when">Daily · 10:00 AM</span>
+        <h3>Payment reminders</h3>
+        <p>A heads-up 3 days before an invoice is due and another on the day, by email and optional text message, with your payment link or bank details.</p>
+        <span class="uses"><b>Uses:</b> your invoice sheet, Gmail, optional Twilio SMS</span>
+      </article>
+      <article class="auto">
+        <span class="when">Instant · Stripe</span>
+        <h3>Failed-payment recovery</h3>
+        <p>When a card payment fails, the customer gets a friendly email and text with a link to update their card. You get an alert so nothing quietly churns.</p>
+        <span class="uses"><b>Uses:</b> Stripe, Gmail, optional Twilio SMS</span>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section id="timeline">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Try it</span>
+      <h2>What goes out, and when</h2>
+      <p class="lede">Drag the slider to see which follow-up a client receives as an invoice ages. Stages are never skipped, and reminders are at least 5 days apart.</p>
+    </div>
+    <div class="demo">
+      <div class="ruler-card">
+        <div class="ruler" aria-hidden="true">
+          <div class="track"></div>
+          <div class="fill" id="fill"></div>
+          <div class="stop s1" style="left: 8.57%">Friendly</div>
+          <div class="stop s2" style="left: 28.57%">Firm</div>
+          <div class="stop s3" style="left: 60%">Final</div>
+          <div class="ticks"><span>due</span><span>7d</span><span>14d</span><span>21d</span><span>28d</span><span>35d</span></div>
+        </div>
+        <div class="controls">
+          <label for="days">Days past due: <span class="val" id="daysVal">4 days</span>
+            <input type="range" id="days" min="0" max="35" step="1" value="4">
+          </label>
+          <label class="toggle" for="paid"><input type="checkbox" id="paid"> Client paid (status set to Paid)</label>
+        </div>
+        <p class="status" id="status" role="status"></p>
+      </div>
+      <article class="email" id="email" aria-live="polite">
+        <div class="head">
+          <span>To: <b>Dana Smith</b> &lt;dana@example.com&gt;</span>
+          <span>Subject: <b id="subject"></b></span>
+        </div>
+        <div class="body" id="body"></div>
+        <span class="pay" id="pay">Pay $1,250.00</span>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section id="safety">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Built for a real business</span>
+      <h2>The safeguards that let you stop worrying about it</h2>
+    </div>
+    <div class="rules">
+      <div class="rule"><h3>Test mode first</h3><p>Until you switch it off, every customer email and text comes to you instead, labelled with who it was meant for. Your sheet is not touched.</p></div>
+      <div class="rule"><h3>Only the right people</h3><p>Only invoices marked as open get reminders. Paid, paused, disputed or blank rows are skipped and listed in your summary so you can fix them.</p></div>
+      <div class="rule"><h3>Problems are loud</h3><p>A bounced email or a disconnected account sends you a plain-English alert with a link to what went wrong. Nothing fails silently.</p></div>
+      <div class="rule"><h3>Your accounts, your data</h3><p>Everything runs in your own n8n, Google and Stripe accounts. I never hold your passwords, and if we stop working together it all keeps running.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="setup">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">How setup works</span>
+      <h2>From first call to live in about a week</h2>
+    </div>
+    <ol class="steps">
+      <li><span class="t">Day 0 · 15 min</span><h3>Call</h3><p>We look at how you invoice and handle inquiries, and pick the package that fits.</p></li>
+      <li><span class="t">Day 1 · 30 min of yours</span><h3>Questionnaire</h3><p>Your wording, payment details, business hours and the facts the reply may use.</p></li>
+      <li><span class="t">Days 2–4</span><h3>Build</h3><p>I set everything up in your accounts and connect them on a short screen-share.</p></li>
+      <li><span class="t">Day 5</span><h3>Test</h3><p>Every email lands in your inbox first. You approve the wording and the summary.</p></li>
+      <li><span class="t">Day 6–7 · 45 min</span><h3>Go live</h3><p>We switch on together, with a recorded walkthrough so you know where everything is.</p></li>
+    </ol>
+  </div>
+</section>
+
+<section id="pricing">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Pricing</span>
+      <h2>One-time setup, no lock-in</h2>
+      <p class="lede">You pay the tools directly: an n8n plan or a small server, plus optional text messages and AI replies, usually a few cents each.</p>
+    </div>
+    <div class="plans">
+      <div class="plan">
+        <span class="tag"></span>
+        <h3>Starter</h3>
+        <div class="price">$450</div>
+        <ul>
+          <li>Any one automation</li>
+          <li>Error alerts</li>
+          <li>Emails written in your voice</li>
+          <li>Test run with your real data</li>
+          <li>14 days of support</li>
+        </ul>
+        <span class="when">Live in 3 business days</span>
+      </div>
+      <div class="plan pick">
+        <span class="tag">Most chosen</span>
+        <h3>Cash-Flow Pack</h3>
+        <div class="price">$1,200</div>
+        <ul>
+          <li>Invoice follow-ups</li>
+          <li>Payment reminders, email and text</li>
+          <li>Stripe failed-payment recovery</li>
+          <li>Your existing invoice sheet mapped</li>
+          <li>30 days of support</li>
+        </ul>
+        <span class="when">Live in 5 business days</span>
+      </div>
+      <div class="plan">
+        <span class="tag"></span>
+        <h3>Full Autopilot</h3>
+        <div class="price">$1,900</div>
+        <ul>
+          <li>All four automations</li>
+          <li>Lead replies tuned to your business</li>
+          <li>Any form tool connected</li>
+          <li>60-minute handoff and recording</li>
+          <li>30 days of support</li>
+        </ul>
+        <span class="when">Live in 7 business days</span>
+      </div>
+    </div>
+    <div class="care">
+      <p><b>Care plan</b> &nbsp;I watch your alerts, reconnect accounts when Google or Stripe asks, update wording, keep n8n up to date and add one small automation each quarter. Cancel any time.</p>
+      <span class="price">$149<small> / month</small></span>
+    </div>
+  </div>
+</section>
+
+<section id="faq">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Questions</span>
+      <h2>Before you book</h2>
+    </div>
+    <div class="faq">
+      <details><summary>Do I need to know anything about n8n?</summary><p>No. n8n is the automation tool everything runs on. I create the account in your name with you, set it up, and show you the one place you might ever want to change wording.</p></details>
+      <details><summary>What if a client has already paid?</summary><p>Set the invoice to Paid in your sheet and reminders stop on the next run. Anything you are not sure about can be set to Paused.</p></details>
+      <details><summary>Will an AI say something I didn't approve?</summary><p>The reply is written only from facts you approve, and it is never allowed to quote prices, promise dates or offer discounts. If the AI is unavailable or unsure, a fixed reply you wrote goes out instead. You can also skip AI completely.</p></details>
+      <details><summary>What does it cost to run each month?</summary><p>An n8n plan or a small server, which you pay n8n or your host directly. Gmail and Sheets are usually already part of your setup. Text messages and AI replies cost a few cents each, and both are optional.</p></details>
+      <details><summary>What happens if something breaks?</summary><p>You get an email that says what stopped and why, usually "reconnect your Google account". Fixes are covered during your support period and on the care plan.</p></details>
+      <details><summary>I use QuickBooks, Xero or a CRM. Does that work?</summary><p>Yes, as an add-on. The standard setup uses a simple invoice sheet, and I can connect your accounting system or CRM instead.</p></details>
+    </div>
+  </div>
+</section>
+
+<section id="book">
+  <div class="wrap closing">
+    <span class="eyebrow">Next step</span>
+    <h2>See it on your own invoices this week</h2>
+    <p class="lede">A free 15-minute call. Bring a rough idea of what is overdue and how inquiries reach you, and you will leave knowing what to automate first.</p>
+    <a class="btn btn-primary" href="#book" id="bookBtn">Book a free 15-minute call</a>
+    <span class="owner-note">Owner note: replace this button's link with your booking page before sharing.</span>
+  </div>
+</section>
+
+<div class="wrap">
+  <footer>
+    <span>Automations run on n8n, Google Workspace, Stripe and Twilio accounts owned by your business.</span>
+    <span>Independent service. Not affiliated with or endorsed by n8n GmbH, Google, Stripe or Twilio.</span>
+  </footer>
+</div>
+
+<script>
+(function () {
+  // Same rules and default wording as the shipped "Invoice follow-ups" workflow.
+  var stages = [
+    { at: 3, cls: 's1', name: 'Friendly reminder', subject: 'Friendly reminder: invoice INV-1042 ($1,250.00)',
+      body: 'Hi Dana,\n\nHope all is well. A quick reminder that invoice INV-1042 for $1,250.00 was due on {due}. If it is already on its way, thank you, and please ignore this note.\n\nYou can pay online with the button below, or by bank transfer quoting the invoice number.\n\nThanks,\nJordan at Acme Plumbing' },
+    { at: 10, cls: 's2', name: 'Firm follow-up', subject: 'Following up: invoice INV-1042 is {days} days overdue',
+      body: 'Hi Dana,\n\nI am following up on invoice INV-1042 for $1,250.00, which was due on {due} and is now {days} days overdue. Could you let me know when we can expect payment? If anything about the invoice looks wrong, just reply and I will sort it out.\n\nThanks,\nJordan at Acme Plumbing' },
+    { at: 21, cls: 's3', name: 'Final reminder', subject: 'Final reminder: invoice INV-1042 ($1,250.00)',
+      body: 'Hi Dana,\n\nInvoice INV-1042 for $1,250.00 is now {days} days overdue. This is our last automated reminder. Please arrange payment this week, or reply with a date that works for you, and Acme Plumbing will follow up personally.\n\nRegards,\nJordan at Acme Plumbing' }
+  ];
+  var due = 'Oct 3, 2026';
+  var days = document.getElementById('days');
+  var paid = document.getElementById('paid');
+  var el = {
+    val: document.getElementById('daysVal'), fill: document.getElementById('fill'), status: document.getElementById('status'),
+    email: document.getElementById('email'), subject: document.getElementById('subject'), body: document.getElementById('body'), pay: document.getElementById('pay')
+  };
+  var stops = document.querySelectorAll('.ruler .stop');
+
+  function render() {
+    var d = Number(days.value);
+    el.val.textContent = d === 1 ? '1 day' : d + ' days';
+    el.fill.style.width = (d / 35 * 100) + '%';
+    var reached = stages.filter(function (s) { return d >= s.at; });
+    stops.forEach(function (stop, i) { stop.classList.toggle('hit', !paid.checked && d >= stages[i].at); });
+    var last = reached[reached.length - 1];
+    if (paid.checked) {
+      el.status.textContent = 'Marked Paid: no more reminders. The invoice also drops out of tomorrow’s overdue total.';
+      el.email.classList.add('quiet');
+      el.subject.textContent = '(nothing sent)';
+      el.body.textContent = 'Reminders stop as soon as the status says Paid.';
+      el.pay.hidden = true;
+      return;
+    }
+    el.email.classList.remove('quiet');
+    if (!last) {
+      el.status.textContent = d === 0 ? 'Due today. The before-due reminders have already gone out; follow-ups start after 3 days.' : 'Nothing yet. The first, friendly follow-up goes out at 3 days.';
+      el.subject.textContent = '(nothing sent yet)';
+      el.body.textContent = 'Clients get a little grace before the first follow-up.';
+      el.pay.hidden = true;
+      el.email.classList.add('quiet');
+      return;
+    }
+    var next = stages[reached.length];
+    el.status.textContent = last.name + ' sent' + (next ? '. Next: ' + next.name.toLowerCase() + ' at ' + next.at + ' days.' : '. Automated reminders end here; your summary suggests a call.');
+    var fill = function (s) { return s.replace(/\{due\}/g, due).replace(/\{days\}/g, String(d)); };
+    el.subject.textContent = fill(last.subject);
+    el.body.textContent = fill(last.body);
+    el.pay.hidden = false;
+  }
+  days.addEventListener('input', render);
+  paid.addEventListener('change', render);
+  render();
+})();
+</script>

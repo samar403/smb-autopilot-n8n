@@ -1,0 +1,523 @@
+{
+  "name": "SMB Autopilot · Payment reminders",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Payment reminders\nNudges clients **before** an invoice is due (default: 3 days before and on the day) by email, plus optional SMS. Uses the same Invoices sheet as \"Invoice follow-ups\", which takes over once a due date passes.\n\n**Setup (10 min)**\n1. Paste your Invoices sheet URL into **Config → sheet_url**.\n2. Connect Google Sheets + Gmail.\n3. SMS: connect Twilio, set **sms_enabled = true** and **twilio_from**. No SMS? Deactivate \"Send SMS\" (select it, press D).\n4. Test with **test_mode = true**, then set it to false and activate.",
+        "width": 400,
+        "height": 440,
+        "color": 4
+      },
+      "id": "14fbff9c-8bee-4cfc-ad35-e65f1ccfe1bb",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -460,
+        120
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 10 * * *"
+            }
+          ]
+        }
+      },
+      "id": "3ce57051-d004-4725-a194-389cbe18ca0b",
+      "name": "Every day at 10am",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        340
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "bb0d22a3-ba53-4a8a-a7c1-784fc12ee924",
+              "name": "business_name",
+              "value": "Acme Plumbing",
+              "type": "string"
+            },
+            {
+              "id": "6718674b-227f-4001-a501-8eaf138e4028",
+              "name": "sender_name",
+              "value": "Jordan at Acme Plumbing",
+              "type": "string"
+            },
+            {
+              "id": "f0c8b087-6942-4f97-aa5c-3f8aeb58d62b",
+              "name": "owner_email",
+              "value": "you@example.com",
+              "type": "string"
+            },
+            {
+              "id": "d4282b72-3550-4bdb-a9bd-049b1d7e7ec8",
+              "name": "owner_phone",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "98812a89-8f6e-4c24-ad52-59c16cd108f1",
+              "name": "sheet_url",
+              "value": "https://docs.google.com/spreadsheets/d/PASTE_YOUR_SHEET_ID/edit",
+              "type": "string"
+            },
+            {
+              "id": "834eb697-b13c-468d-a8a2-eae1872e2933",
+              "name": "invoices_tab",
+              "value": "Invoices",
+              "type": "string"
+            },
+            {
+              "id": "5518c575-39b6-464a-a90b-1ad97fc7a25f",
+              "name": "test_mode",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "bf407516-aadf-4a6a-af6c-e542aac62519",
+              "name": "locale",
+              "value": "en-US",
+              "type": "string"
+            },
+            {
+              "id": "eac68bf8-26e3-4e10-abec-0fba173a4e0f",
+              "name": "default_currency",
+              "value": "USD",
+              "type": "string"
+            },
+            {
+              "id": "23626616-ccf3-4710-a2cb-1b40129c3215",
+              "name": "date_format",
+              "value": "MM/DD/YYYY",
+              "type": "string"
+            },
+            {
+              "id": "3ba29cd9-06a2-4919-aa52-77762444fbc9",
+              "name": "remind_days_before",
+              "value": "3,0",
+              "type": "string"
+            },
+            {
+              "id": "036a66cd-1dd8-4ce8-aaa2-837f18e46143",
+              "name": "payment_instructions",
+              "value": "You can pay online with the button below, or by bank transfer quoting the invoice number.",
+              "type": "string"
+            },
+            {
+              "id": "4502f890-2086-445a-a9b4-e8592c241248",
+              "name": "upcoming_subject",
+              "value": "Reminder: invoice {invoice_id} is due {due_phrase}",
+              "type": "string"
+            },
+            {
+              "id": "1044e5db-48a2-4e1a-a90c-2309a2772799",
+              "name": "upcoming_body",
+              "value": "Hi {first_name},\n\nJust a heads-up that invoice {invoice_id} for {amount} is due {due_phrase} ({due_date}).\n\n{payment_instructions}\n\nThanks,\n{sender_name}",
+              "type": "string"
+            },
+            {
+              "id": "bc906e74-f270-4bf7-a5ca-0833341e6a2f",
+              "name": "due_today_subject",
+              "value": "Invoice {invoice_id} is due today",
+              "type": "string"
+            },
+            {
+              "id": "22dfbd41-0f3c-49c2-ade8-f998d099d452",
+              "name": "due_today_body",
+              "value": "Hi {first_name},\n\nA quick reminder that invoice {invoice_id} for {amount} is due today. If you have already paid, thank you, and please ignore this message.\n\n{payment_instructions}\n\nThanks,\n{sender_name}",
+              "type": "string"
+            },
+            {
+              "id": "a0cdd568-cdaa-4c21-a08b-9dc6159d80a7",
+              "name": "sms_enabled",
+              "value": false,
+              "type": "boolean"
+            },
+            {
+              "id": "4f8bb2a1-2259-4fb5-a891-d0e776c1abe0",
+              "name": "twilio_from",
+              "value": "+15550001234",
+              "type": "string"
+            },
+            {
+              "id": "229c719b-6371-47a9-ac1f-3352410a8f6d",
+              "name": "sms_template",
+              "value": "{business_name}: invoice {invoice_id} for {amount} is due {due_phrase}. {payment_link} Reply STOP to opt out.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "9a9ac2af-262f-4822-a498-300bf04ccd9d",
+      "name": "Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        340
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "mode": "url",
+          "value": "={{ $('Config').first().json.sheet_url }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "={{ $('Config').first().json.invoices_tab }}"
+        },
+        "options": {
+          "outputFormatting": {
+            "values": {
+              "general": "UNFORMATTED_VALUE",
+              "date": "SERIAL_NUMBER"
+            }
+          }
+        }
+      },
+      "id": "b039c980-3f59-4f6f-a2f6-a9df23791fac",
+      "name": "Read invoices",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        440,
+        340
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Decides which invoices get a \"coming up\" or \"due today\" reminder.\n// remind_days_before = \"3,0\" means: once when 3 or fewer days remain, and again\n// on the due date. Sent offsets are logged in the pre_due_reminders column, so a\n// missed day (server down, weekend) is caught up without double-sending.\n// Overdue invoices are left to the \"Invoice follow-ups\" workflow.\n// ---- dates (shared helper, inlined at build time) ----\n// Sheet dates arrive as serial numbers (date cells read as SERIAL_NUMBER), ISO\n// text (\"2026-10-31\"), or day/month text whose order depends on DATE_FORMAT.\nfunction isoFromParts(y, m, d) {\n  const dt = new Date(Date.UTC(y, m - 1, d));\n  if (dt.getUTCFullYear() !== y || dt.getUTCMonth() !== m - 1 || dt.getUTCDate() !== d) return null;\n  return dt.toISOString().slice(0, 10);\n}\n\nfunction toIsoDate(value, dateFormat) {\n  if (value === null || value === undefined) return null;\n  const s = String(value).trim();\n  if (!s) return null;\n  if (/^\\d+(\\.\\d+)?$/.test(s)) {\n    const serial = Number(s);\n    if (serial < 20000 || serial > 80000) return null; // not a plausible 1954-2119 date\n    return new Date(Date.UTC(1899, 11, 30) + Math.floor(serial) * 86400000).toISOString().slice(0, 10);\n  }\n  let m = s.match(/^(\\d{4})-(\\d{1,2})-(\\d{1,2})(?:[T ].*)?$/);\n  if (m) return isoFromParts(+m[1], +m[2], +m[3]);\n  m = s.match(/^(\\d{1,2})[/.-](\\d{1,2})[/.-](\\d{4})$/);\n  if (m) {\n    const [a, b, y] = [+m[1], +m[2], +m[3]];\n    return String(dateFormat).toUpperCase().startsWith('MM') ? isoFromParts(y, a, b) : isoFromParts(y, b, a);\n  }\n  const parsed = new Date(s); // \"Oct 31, 2026\", \"31 October 2026\"\n  if (!isNaN(parsed)) return isoFromParts(parsed.getFullYear(), parsed.getMonth() + 1, parsed.getDate());\n  return null;\n}\n\n/** Whole days from `fromIso` to `toIso` (positive when toIso is later). */\nfunction daysBetween(fromIso, toIso) {\n  const [a, b] = [fromIso, toIso].map((iso) => {\n    const [y, m, d] = iso.split('-').map(Number);\n    return Date.UTC(y, m - 1, d);\n  });\n  return Math.round((b - a) / 86400000);\n}\n\nfunction displayDate(iso, locale) {\n  const [y, m, d] = iso.split('-').map(Number);\n  try {\n    return new Intl.DateTimeFormat(locale || 'en-US', { dateStyle: 'medium', timeZone: 'UTC' }).format(new Date(Date.UTC(y, m - 1, d)));\n  } catch {\n    return iso;\n  }\n}\n// ---- text + email layout (shared helper, inlined at build time) ----\nfunction escapeHtml(s) {\n  return String(s ?? '').replace(/[&<>\"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '\"': '&quot;', \"'\": '&#39;' })[c]);\n}\n\n/** Replace {placeholders}; unknown placeholders are left visible so typos get noticed. */\nfunction fill(template, vars) {\n  return String(template ?? '').replace(/\\{(\\w+)\\}/g, (match, key) => (key in vars ? String(vars[key] ?? '') : match));\n}\n\nfunction isEmail(s) {\n  return /^[^\\s@<>(),;:]+@[^\\s@<>(),;:]+\\.[a-z]{2,}$/i.test(String(s ?? '').trim());\n}\n\nfunction firstName(fullName) {\n  const first = String(fullName ?? '').trim().split(/\\s+/)[0] || '';\n  return first ? first.charAt(0).toUpperCase() + first.slice(1) : '';\n}\n\n/** \"1,250.00\", \"$1250\", 1250 -> 1250. Returns null when no number is present. */\nfunction toAmount(value) {\n  if (typeof value === 'number') return value;\n  const cleaned = String(value ?? '').replace(/[^0-9.-]/g, '');\n  if (!cleaned || isNaN(Number(cleaned))) return null;\n  return Number(cleaned);\n}\n\nfunction money(amount, currency, locale) {\n  if (amount === null || amount === undefined) return '';\n  try {\n    return new Intl.NumberFormat(locale || 'en-US', { style: 'currency', currency: (currency || 'USD').toUpperCase() }).format(amount);\n  } catch {\n    return `${currency || ''} ${Number(amount).toFixed(2)}`.trim();\n  }\n}\n\n/** Plain text with blank-line paragraphs -> simple HTML paragraphs. */\nfunction textToHtml(text) {\n  return String(text ?? '')\n    .trim()\n    .split(/\\n\\s*\\n/)\n    .map((p) => `<p style=\"margin:0 0 14px\">${escapeHtml(p.trim()).replace(/\\n/g, '<br>')}</p>`)\n    .join('\\n');\n}\n\n/** Minimal, client-safe HTML email: paragraphs, optional button, small footer. */\nfunction emailHtml({ bodyText, buttonLabel, buttonUrl, footer }) {\n  const button = buttonUrl\n    ? `<p style=\"margin:22px 0\"><a href=\"${escapeHtml(buttonUrl)}\" style=\"background:#1f6feb;color:#ffffff;text-decoration:none;padding:11px 20px;border-radius:6px;display:inline-block;font-weight:600\">${escapeHtml(buttonLabel || 'Open link')}</a></p>`\n    : '';\n  const foot = footer ? `<p style=\"margin:24px 0 0;color:#6b7280;font-size:12px\">${escapeHtml(footer)}</p>` : '';\n  return `<div style=\"font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.55;color:#111827;max-width:560px\">\\n${textToHtml(bodyText)}\\n${button}${foot}\\n</div>`;\n}\n\n/** Owner-facing HTML table. rows: array of arrays of cell text. */\nfunction htmlTable(headers, rows) {\n  const th = headers.map((h) => `<th style=\"text-align:left;padding:6px 10px;border-bottom:1px solid #d1d5db;font-size:13px\">${escapeHtml(h)}</th>`).join('');\n  const body = rows\n    .map((r) => `<tr>${r.map((c) => `<td style=\"padding:6px 10px;border-bottom:1px solid #eef0f3;font-size:13px\">${escapeHtml(c)}</td>`).join('')}</tr>`)\n    .join('\\n');\n  return `<table style=\"border-collapse:collapse;margin:8px 0 18px\">\\n<tr>${th}</tr>\\n${body}\\n</table>`;\n}\n// ---- invoice rows (shared helper, inlined at build time) ----\n// One \"Invoices\" sheet drives both pre-due reminders and post-due follow-ups.\n// Only rows whose status is explicitly open are ever contacted; a blank status\n// is treated as \"not ready\" so a forgotten Paid mark never triggers a dunning email.\nconst OPEN_STATUSES = ['unpaid', 'open', 'sent', 'due', 'overdue', 'partial', 'partially paid'];\nconst CLOSED_STATUSES = ['paid', 'void', 'cancelled', 'canceled', 'disputed', 'paused', 'written off', 'refunded', 'draft'];\n\n/** Normalise one sheet row. Returns { ok, reason, invoice }. */\nfunction readInvoiceRow(row, cfg) {\n  const status = String(row.status ?? '').trim().toLowerCase();\n  const id = String(row.invoice_id ?? '').trim();\n  if (!id) return { ok: false, reason: 'missing invoice_id', closed: false };\n  if (CLOSED_STATUSES.includes(status)) return { ok: false, reason: `status ${status}`, closed: true };\n  if (!OPEN_STATUSES.includes(status)) return { ok: false, reason: status ? `unknown status \"${row.status}\"` : 'blank status', closed: false };\n  const email = String(row.client_email ?? '').trim();\n  if (!isEmail(email)) return { ok: false, reason: email ? `bad email \"${email}\"` : 'missing client_email', closed: false };\n  const due = toIsoDate(row.due_date, cfg.date_format);\n  if (!due) return { ok: false, reason: `unreadable due_date \"${row.due_date ?? ''}\"`, closed: false };\n  const amount = toAmount(row.amount);\n  if (amount === null) return { ok: false, reason: `unreadable amount \"${row.amount ?? ''}\"`, closed: false };\n  const currency = String(row.currency || cfg.default_currency || 'USD').trim().toUpperCase();\n  return {\n    ok: true,\n    invoice: {\n      invoice_id: id,\n      client_name: String(row.client_name ?? '').trim(),\n      client_email: email,\n      client_phone: String(row.client_phone ?? '').trim(),\n      amount,\n      currency,\n      due_date: due,\n      payment_link: String(row.payment_link ?? '').trim(),\n      reminder_stage: Math.max(0, Math.min(3, parseInt(row.reminder_stage, 10) || 0)),\n      last_reminder_at: toIsoDate(row.last_reminder_at, 'YYYY-MM-DD'),\n      pre_due_reminders: String(row.pre_due_reminders ?? '').trim(),\n    },\n  };\n}\n\n/** Placeholder values every template can use. */\nfunction invoiceVars(inv, cfg, today) {\n  const daysOverdue = daysBetween(inv.due_date, today);\n  return {\n    client_name: inv.client_name || 'there',\n    first_name: firstName(inv.client_name) || 'there',\n    invoice_id: inv.invoice_id,\n    amount: money(inv.amount, inv.currency, cfg.locale),\n    due_date: displayDate(inv.due_date, cfg.locale),\n    days_overdue: Math.max(0, daysOverdue),\n    days_until_due: Math.max(0, -daysOverdue),\n    business_name: cfg.business_name,\n    sender_name: cfg.sender_name,\n    payment_link: inv.payment_link,\n    payment_instructions: cfg.payment_instructions || '',\n  };\n}\nconst cfg = $('Config').first().json;\nconst today = $now.toISODate();\nconst testMode = cfg.test_mode === true || String(cfg.test_mode).toLowerCase() === 'true';\nconst smsEnabled = cfg.sms_enabled === true || String(cfg.sms_enabled).toLowerCase() === 'true';\nconst offsets = [...new Set(String(cfg.remind_days_before || '3,0').split(',').map((s) => parseInt(s, 10)).filter((n) => n >= 0))].sort((a, b) => b - a);\nconst isPhone = (p) => /^\\+[1-9]\\d{7,14}$/.test(String(p).replace(/[\\s().-]/g, ''));\n\nconst out = [];\n$input.all().forEach((item, index) => {\n  const parsed = readInvoiceRow(item.json, cfg);\n  if (!parsed.ok) return;\n  const inv = parsed.invoice;\n  const daysUntil = daysBetween(today, inv.due_date);\n  if (daysUntil < 0 || inv.reminder_stage > 0) return;\n\n  const done = new Set(inv.pre_due_reminders.split(/[,\\s]+/).filter(Boolean).map(Number));\n  const reached = offsets.filter((k) => daysUntil <= k);\n  if (!reached.some((k) => !done.has(k))) return;\n\n  const vars = invoiceVars(inv, cfg, today);\n  vars.due_phrase = daysUntil === 0 ? 'today' : daysUntil === 1 ? 'tomorrow' : `in ${daysUntil} days`;\n  const dueToday = daysUntil === 0;\n  const subject = fill(dueToday ? cfg.due_today_subject : cfg.upcoming_subject, vars);\n  const phone = inv.client_phone.replace(/[\\s().-]/g, '');\n  const smsTo = !smsEnabled ? '' : testMode ? (isPhone(cfg.owner_phone) ? String(cfg.owner_phone).replace(/[\\s().-]/g, '') : '') : isPhone(phone) ? phone : '';\n\n  out.push({\n    json: {\n      invoice_id: inv.invoice_id,\n      client_name: inv.client_name,\n      client_email: inv.client_email,\n      amount_display: vars.amount,\n      days_until_due: daysUntil,\n      to: testMode ? cfg.owner_email : inv.client_email,\n      subject: testMode ? `[TEST -> ${inv.client_email}] ${subject}` : subject,\n      html: emailHtml({\n        bodyText: fill(dueToday ? cfg.due_today_body : cfg.upcoming_body, vars),\n        buttonLabel: `Pay ${vars.amount}`,\n        buttonUrl: inv.payment_link,\n        footer: `${cfg.business_name} · Invoice ${inv.invoice_id}`,\n      }),\n      sms_to: smsTo,\n      sms_text: fill(cfg.sms_template, vars).replace(/\\s+/g, ' ').trim().slice(0, 320),\n      pre_due_reminders: [...new Set([...done, ...reached])].sort((a, b) => b - a).join(','),\n      test_mode: testMode,\n    },\n    pairedItem: { item: index },\n  });\n});\n\nreturn out;\n"
+      },
+      "id": "f9fd0394-21bd-4565-a76c-848ddccaca2a",
+      "name": "Plan payment reminders",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        340
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.to }}",
+        "subject": "={{ $json.subject }}",
+        "emailType": "html",
+        "message": "={{ $json.html }}",
+        "options": {
+          "appendAttribution": false,
+          "senderName": "={{ $('Config').first().json.sender_name }}"
+        }
+      },
+      "id": "f4635249-6360-4163-a53b-f7dae016c025",
+      "name": "Send reminder email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        880,
+        340
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "6c6a6500-4e92-4761-ae92-9c8b19a0a41a",
+              "leftValue": "={{ $('Config').first().json.test_mode }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "d2a97742-cc21-41eb-ab76-e3b1d0bb7b5b",
+      "name": "Live mode?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1120,
+        180
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "mode": "url",
+          "value": "={{ $('Config').first().json.sheet_url }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "={{ $('Config').first().json.invoices_tab }}"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "invoice_id": "={{ $('Plan payment reminders').item.json.invoice_id }}",
+            "pre_due_reminders": "={{ $('Plan payment reminders').item.json.pre_due_reminders }}"
+          },
+          "matchingColumns": [
+            "invoice_id"
+          ],
+          "schema": [
+            {
+              "id": "invoice_id",
+              "displayName": "invoice_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "pre_due_reminders",
+              "displayName": "pre_due_reminders",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "id": "ac55a740-4f11-4706-a6bd-b39a0dcbf0ac",
+      "name": "Log reminder in sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1360,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "99d2b0cb-8004-4ad7-af00-c841d2a5800a",
+              "leftValue": "={{ $('Plan payment reminders').item.json.sms_to }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "c465fb54-bf8a-49c6-a6e7-ee0a2df64389",
+      "name": "Text the client?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1120,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "from": "={{ $('Config').first().json.twilio_from }}",
+        "to": "={{ $('Plan payment reminders').item.json.sms_to }}",
+        "message": "={{ $('Plan payment reminders').item.json.sms_text }}",
+        "options": {}
+      },
+      "id": "dc1c1c81-7739-45e9-a131-715269deef2a",
+      "name": "Send SMS",
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "position": [
+        1360,
+        380
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Gathers every email that failed to send into one alert for the owner.\n// Items arrive on the email node's error output: { error } plus a link back to\n// the planned reminder they came from.\n// ---- text + email layout (shared helper, inlined at build time) ----\nfunction escapeHtml(s) {\n  return String(s ?? '').replace(/[&<>\"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '\"': '&quot;', \"'\": '&#39;' })[c]);\n}\n\n/** Replace {placeholders}; unknown placeholders are left visible so typos get noticed. */\nfunction fill(template, vars) {\n  return String(template ?? '').replace(/\\{(\\w+)\\}/g, (match, key) => (key in vars ? String(vars[key] ?? '') : match));\n}\n\nfunction isEmail(s) {\n  return /^[^\\s@<>(),;:]+@[^\\s@<>(),;:]+\\.[a-z]{2,}$/i.test(String(s ?? '').trim());\n}\n\nfunction firstName(fullName) {\n  const first = String(fullName ?? '').trim().split(/\\s+/)[0] || '';\n  return first ? first.charAt(0).toUpperCase() + first.slice(1) : '';\n}\n\n/** \"1,250.00\", \"$1250\", 1250 -> 1250. Returns null when no number is present. */\nfunction toAmount(value) {\n  if (typeof value === 'number') return value;\n  const cleaned = String(value ?? '').replace(/[^0-9.-]/g, '');\n  if (!cleaned || isNaN(Number(cleaned))) return null;\n  return Number(cleaned);\n}\n\nfunction money(amount, currency, locale) {\n  if (amount === null || amount === undefined) return '';\n  try {\n    return new Intl.NumberFormat(locale || 'en-US', { style: 'currency', currency: (currency || 'USD').toUpperCase() }).format(amount);\n  } catch {\n    return `${currency || ''} ${Number(amount).toFixed(2)}`.trim();\n  }\n}\n\n/** Plain text with blank-line paragraphs -> simple HTML paragraphs. */\nfunction textToHtml(text) {\n  return String(text ?? '')\n    .trim()\n    .split(/\\n\\s*\\n/)\n    .map((p) => `<p style=\"margin:0 0 14px\">${escapeHtml(p.trim()).replace(/\\n/g, '<br>')}</p>`)\n    .join('\\n');\n}\n\n/** Minimal, client-safe HTML email: paragraphs, optional button, small footer. */\nfunction emailHtml({ bodyText, buttonLabel, buttonUrl, footer }) {\n  const button = buttonUrl\n    ? `<p style=\"margin:22px 0\"><a href=\"${escapeHtml(buttonUrl)}\" style=\"background:#1f6feb;color:#ffffff;text-decoration:none;padding:11px 20px;border-radius:6px;display:inline-block;font-weight:600\">${escapeHtml(buttonLabel || 'Open link')}</a></p>`\n    : '';\n  const foot = footer ? `<p style=\"margin:24px 0 0;color:#6b7280;font-size:12px\">${escapeHtml(footer)}</p>` : '';\n  return `<div style=\"font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.55;color:#111827;max-width:560px\">\\n${textToHtml(bodyText)}\\n${button}${foot}\\n</div>`;\n}\n\n/** Owner-facing HTML table. rows: array of arrays of cell text. */\nfunction htmlTable(headers, rows) {\n  const th = headers.map((h) => `<th style=\"text-align:left;padding:6px 10px;border-bottom:1px solid #d1d5db;font-size:13px\">${escapeHtml(h)}</th>`).join('');\n  const body = rows\n    .map((r) => `<tr>${r.map((c) => `<td style=\"padding:6px 10px;border-bottom:1px solid #eef0f3;font-size:13px\">${escapeHtml(c)}</td>`).join('')}</tr>`)\n    .join('\\n');\n  return `<table style=\"border-collapse:collapse;margin:8px 0 18px\">\\n<tr>${th}</tr>\\n${body}\\n</table>`;\n}\nconst cfg = $('Config').first().json;\nconst rows = $input.all().map((item, i) => {\n  const planned = $('Plan payment reminders').itemMatching(i).json;\n  const err = item.json.error;\n  const message = typeof err === 'string' ? err : err?.message || JSON.stringify(err ?? item.json).slice(0, 300);\n  return [planned.client_name || '', planned.client_email || planned.to || '', planned.invoice_id || '', message];\n});\n\nreturn [{\n  json: {\n    to: cfg.owner_email,\n    subject: `Action needed: ${rows.length} reminder email(s) failed to send`,\n    html: `<div style=\"font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:14px;color:#111827\">\n<p>These reminders did not go out, so the sheet was left unchanged for them and they will be retried on the next run. A bad email address is the usual cause.</p>\n${htmlTable(['Client', 'Email', 'Invoice', 'Error'], rows)}\n</div>`,\n  },\n}];\n"
+      },
+      "id": "119bc8ba-1c54-4ffb-ad3a-73c40974fec8",
+      "name": "Collect failures",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        620
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.to }}",
+        "subject": "={{ $json.subject }}",
+        "emailType": "html",
+        "message": "={{ $json.html }}",
+        "options": {
+          "appendAttribution": false,
+          "senderName": "SMB Autopilot"
+        }
+      },
+      "id": "3b61669c-71f5-4611-a8f5-4b641e2c1c48",
+      "name": "Alert owner: failed sends",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1360,
+        620
+      ]
+    }
+  ],
+  "connections": {
+    "Every day at 10am": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config": {
+      "main": [
+        [
+          {
+            "node": "Read invoices",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read invoices": {
+      "main": [
+        [
+          {
+            "node": "Plan payment reminders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Plan payment reminders": {
+      "main": [
+        [
+          {
+            "node": "Send reminder email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send reminder email": {
+      "main": [
+        [
+          {
+            "node": "Live mode?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Text the client?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Collect failures",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Live mode?": {
+      "main": [
+        [
+          {
+            "node": "Log reminder in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Text the client?": {
+      "main": [
+        [
+          {
+            "node": "Send SMS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collect failures": {
+      "main": [
+        [
+          {
+            "node": "Alert owner: failed sends",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "description": "Sends before-due and due-today payment reminders by email and SMS from the shared Invoices sheet."
+  },
+  "active": false
+}
